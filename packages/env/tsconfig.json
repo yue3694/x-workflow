@@ -1,0 +1,3 @@
+{
+  "extends": "@x-workflow/config/tsconfig.base.json"
+}

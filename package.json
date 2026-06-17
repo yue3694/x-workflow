@@ -1,0 +1,32 @@
+{
+  "name": "x-workflow",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
+    "check-types": "pnpm -r check-types",
+    "dev:web": "pnpm --filter web dev",
+    "dev:server": "pnpm --filter server dev",
+    "db:push": "pnpm --filter @x-workflow/db db:push",
+    "db:studio": "pnpm --filter @x-workflow/db db:studio",
+    "db:generate": "pnpm --filter @x-workflow/db db:generate",
+    "db:migrate": "pnpm --filter @x-workflow/db db:migrate",
+    "db:local": "pnpm --filter @x-workflow/db db:local"
+  },
+  "dependencies": {
+    "@x-workflow/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "@x-workflow/config": "workspace:*",
+    "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@11.6.0"
+}
