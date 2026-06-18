@@ -192,7 +192,7 @@ export function ConfigPanel({ selectedNode, onConfigUpdate }: ConfigPanelProps) 
                   min={0}
                   max={5}
                   className="h-8 w-20 text-right"
-                  value={(localConfig.maxRetries as number) ?? 3}
+                  value={(localConfig.maxRetries as number) ?? 0}
                   onChange={(e) =>
                     handleChange("maxRetries", Math.min(5, Math.max(0, Number(e.target.value) || 0)))
                   }

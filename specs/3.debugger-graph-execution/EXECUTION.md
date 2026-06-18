@@ -20,39 +20,39 @@
 
 ## 原子任务列表
 
-- [ ] **T-001**: 后端字段补全 —— `packages/db/src/schema/workflow.ts` 的 `NodeConfig` 新增 `maxRetries?: number; timeout?: number; knowledgeBaseId?: string`；`packages/api/src/routers/workflow.ts` 的 `nodeConfigSchema` 同步新增 `maxRetries: z.number().int().min(0).max(5).optional()`、`timeout: z.number().int().min(100).max(30000).optional()`、`knowledgeBaseId: z.string().optional()`
+- [x] **T-001**: 后端字段补全 —— `packages/db/src/schema/workflow.ts` 的 `NodeConfig` 新增 `maxRetries?: number; timeout?: number; knowledgeBaseId?: string`；`packages/api/src/routers/workflow.ts` 的 `nodeConfigSchema` 同步新增 `maxRetries: z.number().int().min(0).max(5).optional()`、`timeout: z.number().int().min(100).max(30000).optional()`、`knowledgeBaseId: z.string().optional()`
   - 文件: `packages/db/src/schema/workflow.ts`、`packages/api/src/routers/workflow.ts`
   - 验收: `tsc` 通过；通过 `workflow.update` 写入这三个字段后 `workflow.get` 能读回
 
-- [ ] **T-002**: 前端补全（偏差1/2修复）—— `config-panel.tsx`："全局配置"区域的两个静态 `<span>` 换成真实输入框（`<input type="number">`，min/max 与后端 zod 一致），接入 `handleChange("maxRetries", ...)`/`handleChange("timeout", ...)`；`multimodal` 节点的配置表单从"暂无可配置参数"占位改为一个 `<select>`，选项来自 `trpc.knowledge.list` 查询结果，绑定 `knowledgeBaseId`
+- [x] **T-002**: 前端补全（偏差1/2修复）—— `config-panel.tsx`："全局配置"区域的两个静态 `<span>` 换成真实输入框（`<input type="number">`，min/max 与后端 zod 一致），接入 `handleChange("maxRetries", ...)`/`handleChange("timeout", ...)`；`multimodal` 节点的配置表单从"暂无可配置参数"占位改为一个 `<select>`，选项来自 `trpc.knowledge.list` 查询结果，绑定 `knowledgeBaseId`
   - 文件: `apps/web/src/app/orchestrator/components/config-panel.tsx`
   - 验收: 在 Orchestrator 里给某节点设置 maxRetries/timeout/knowledgeBaseId 后刷新页面，值仍正确显示（对应 AC-001）
 
-- [ ] **T-003**: 新建 `packages/api/src/utils/workflow-engine.ts`：定义 `StepResult`/`ExecutionResult` 类型，节点按 `x` 坐标排序，`context: { text, retrievedChunks? }` 在节点间传递，`withTimeout()` 包装每步执行，`haltOnError` 终止逻辑，`trigger` 节点执行函数
+- [x] **T-003**: 新建 `packages/api/src/utils/workflow-engine.ts`：定义 `StepResult`/`ExecutionResult` 类型，节点按 `x` 坐标排序，`context: { text, retrievedChunks? }` 在节点间传递，`withTimeout()` 包装每步执行，`haltOnError` 终止逻辑，`trigger` 节点执行函数
   - 文件: `packages/api/src/utils/workflow-engine.ts`
   - 验收: 单独跑一个只含 `trigger` 节点的最小 `nodes` 数组，`executeWorkflow()` 返回 `steps.length === 1`、`status: "completed"`
 
-- [ ] **T-004**: `condition` 节点启发式判定执行函数（文本长度 `< 2` 或命中预设关键词判定失败）+ `parallel` 节点拆分/并发聚合执行函数（复用 `rag.ts` 的 `chunkText` 思路按句子拆分，`Promise.all` 聚合）
+- [x] **T-004**: `condition` 节点启发式判定执行函数（文本长度 `< 2` 或命中预设关键词判定失败）+ `parallel` 节点拆分/并发聚合执行函数（复用 `rag.ts` 的 `chunkText` 思路按句子拆分，`Promise.all` 聚合）
   - 文件: `packages/api/src/utils/workflow-engine.ts`
   - 验收: 输入长度 1 的文本走 condition 节点判定失败；`haltOnError=true` 时引擎停止，`haltedAt` 被设置
 
-- [ ] **T-005**: `packages/api/src/utils/rag.ts` 新增 `searchSimilarChunks(knowledgeBaseId, queryText, topK=3)`（余弦相似度排序 `documentChunk.embedding`，校验 `document.userId === userId` 防越权）；`multimodal` 节点执行函数（关联了 `knowledgeBaseId` 时检索融合进 `context`，未关联时直通）
+- [x] **T-005**: `packages/api/src/utils/rag.ts` 新增 `searchSimilarChunks(knowledgeBaseId, queryText, topK=3)`（余弦相似度排序 `documentChunk.embedding`，校验 `document.userId === userId` 防越权）；`multimodal` 节点执行函数（关联了 `knowledgeBaseId` 时检索融合进 `context`，未关联时直通）
   - 文件: `packages/api/src/utils/rag.ts`、`packages/api/src/utils/workflow-engine.ts`
   - 验收: 关联了知识库的节点执行后 `context.retrievedChunks` 非空；跨用户尝试关联他人知识库时 `FORBIDDEN`
 
-- [ ] **T-006**: `llm_synthesis` 节点执行函数 —— 复用 `generateReply()`/`isGeminiConfigured()`（从 `gemini.ts` import，不重新实现），按节点 `config.maxRetries`（默认 0）固定延迟重试，重试耗尽 `status: "error"`，是否终止由 `haltOnError` 决定；该步成功文本即 `ExecutionResult.finalText`
+- [x] **T-006**: `llm_synthesis` 节点执行函数 —— 复用 `generateReply()`/`isGeminiConfigured()`（从 `gemini.ts` import，不重新实现），按节点 `config.maxRetries`（默认 0）固定延迟重试，重试耗尽 `status: "error"`，是否终止由 `haltOnError` 决定；该步成功文本即 `ExecutionResult.finalText`
   - 文件: `packages/api/src/utils/workflow-engine.ts`
   - 验收: 复用 feature 2 的降级路径——未配置 key 时仍走模拟回复兜底，不抛错
 
-- [ ] **T-007**: `packages/api/src/routers/debugger.ts`：`chat` mutation 改为 `nodes.length > 0` 时调用 `executeWorkflow()`（`steps`/`finalText` 替换原写死映射），`nodes.length === 0` 时保留 feature 1/2 已有的单步模拟/真实 LLM 兼容路径；`getSteps` 改为接收可选 `workflowId`，返回所选工作流的真实节点预览列表，不传时回退占位说明
+- [x] **T-007**: `packages/api/src/routers/debugger.ts`：`chat` mutation 改为 `nodes.length > 0` 时调用 `executeWorkflow()`（`steps`/`finalText` 替换原写死映射），`nodes.length === 0` 时保留 feature 1/2 已有的单步模拟/真实 LLM 兼容路径；`getSteps` 改为接收可选 `workflowId`，返回所选工作流的真实节点预览列表，不传时回退占位说明
   - 文件: `packages/api/src/routers/debugger.ts`
   - 验收: 传 `workflowId` 时 `steps` 数量与该工作流节点数一致；不传时行为与 feature 1/2 验证过的现状一致（不回归）
 
-- [ ] **T-008**: 前端补全（偏差3修复）—— `debugger-view.tsx` 新增工作流选择器（用已有的 `trpc.debugger.listWorkflows` 查询填充一个 `<select>`），选中后传入 `chatMutation.mutateAsync({ message, workflowId })` 与 `getSteps({ workflowId })`；移除 `STEP_DELAY` 本地动画状态机，改为直接渲染 mutation 返回的真实 `steps` 数组（任意数量，`status` 映射现有视觉样式，`halted` 状态显示 `detail` 终止原因）
+- [x] **T-008**: 前端补全（偏差3修复）—— `debugger-view.tsx` 新增工作流选择器（用已有的 `trpc.debugger.listWorkflows` 查询填充一个 `<select>`），选中后传入 `chatMutation.mutateAsync({ message, workflowId })` 与 `getSteps({ workflowId })`；移除 `STEP_DELAY` 本地动画状态机，改为直接渲染 mutation 返回的真实 `steps` 数组（任意数量，`status` 映射现有视觉样式，`halted` 状态显示 `detail` 终止原因）
   - 文件: `apps/web/src/components/debugger/debugger-view.tsx`、`apps/web/src/components/debugger/step-cards.tsx`（如需调整 props 以支持任意数量/新状态字段）
   - 验收: 浏览器里选中一个工作流发消息，轨迹面板按真实节点顺序展示，数量与节点数一致（对应 AC-002）
 
-- [ ] **T-009**: 端到端手动验证 AC-001~AC-006
+- [x] **T-009**: 端到端手动验证 AC-001~AC-006
   - 文件: 无（验证任务）
   - 验收: 见下方"验收标准核验计划"
 

@@ -99,3 +99,33 @@
 
 ---
 
+### Feature: debugger-graph-execution
+
+#### 技术要点
+
+1. **`setTimeout` 包装的超时机制对"同步驱动的 async 函数"完全无效，无论超时值多小**
+   - Node.js 事件循环规则：microtask 队列必须完全清空后才会检查 macrotask（包括 `setTimeout` 计时器）。如果一个 `async` 函数内部的"await"实际上是包装一个同步操作（如 better-sqlite3 这种同步驱动），它会在同一轮 microtask 内就 resolve，永远赢过任何 `setTimeout`（哪怕设成 1ms）触发的竞争。
+   - 后果：`workflow-engine.ts` 的 `multimodal` 节点（底层调用 `searchSimilarChunks` → drizzle + better-sqlite3，全程同步）无法在真实端到端场景下被 `withTimeout()` 触发超时，不管 `config.timeout` 调多小。
+   - 验证 `withTimeout()` 本身的正确性时，必须喂给它一个真正的宏任务延迟（如 `new Promise(resolve => setTimeout(resolve, 50))` 模拟慢操作），而不是依赖现有节点类型的真实调用链——否则会得出"超时机制没生效"的错误结论，实际上是节点本身不够"慢"。
+   - 这是一个值得记录给未来开发者的通用调试陷阱，不是本次的 bug：超时包装器的实现是对的，只是当前节点执行函数全部基于同步 I/O，没有真实可触发超时的路径（除非接入有真实网络延迟的 LLM 调用）。
+
+2. **UI 展示默认值必须与后端实际默认值保持一致，否则会误导用户**
+   - `config-panel.tsx` 的 `maxRetries` 输入框最初在未配置时显示占位默认值 `3`，但 `workflow-engine.ts` 里 `executeLlmSynthesis` 的实际默认是 `node.config.maxRetries ?? 0`（design.md 明确写的"默认 0"）。这种"显示值"和"生效值"不一致的问题在 code review 时不容易被发现（两处分属前后端不同文件），N4 审计阶段交叉核对 UI 默认值与执行引擎默认值后才发现，已修正为两边都用 `0`。
+   - 经验：任何"配置项有默认值"的字段，前端展示默认值与后端实际生效默认值必须在审计阶段显式核对一遍，不能假设两边写代码的人（或同一个人不同时间）记的是同一个数字。
+
+3. **临时给私有函数加 `export` 做单元验证，验证完立刻还原，是比"改动生产代码逻辑去适配测试"更干净的验证方式**
+   - 为了验证 `withTimeout()`（模块内未导出的私有函数）的真实行为，临时把它加上 `export`、用 `tsx` 直接跑一个独立脚本验证，验证完立刻把 `export` 去掉、删除临时脚本文件，不在生产代码里留下任何为了"方便测试"而新增的导出或钩子。
+   - 配合 `set -a && source apps/server/.env && set +a` 手动加载服务端环境变量，可以在不依赖 vitest/jest 等框架的情况下，直接用 `tsx` 跑通需要 `packages/env` zod 校验的模块（如 `workflow-engine.ts` 间接依赖 `db`/`env`）。
+
+#### 安全经验
+
+1. **越权校验要在"执行时"现查，不能信任配置里存的 ID**
+   - `multimodal` 节点的 `knowledgeBaseId` 来自用户保存在 Orchestrator 里的工作流配置，理论上配置数据本身也可能被篡改/复制自其他工作流。`searchSimilarChunks()` 在每次执行时都重新查询 `document.userId === userId`，不假设"配置里写的 ID 一定是当前用户自己的"，与 `knowledge.ts` 现有的越权校验模式保持一致。
+
+#### 验证范围说明
+
+- AC-004（`llm_synthesis` 节点的 `model/systemInstruction/temperature` 真实生效）延续 feature 2 已记录的延后约定，环境中无真实 `GEMINI_API_KEY`，只验证了配置传参的代码路径与降级回复，未验证真实 Gemini 响应内容随参数变化。
+- AC-001/002/003/005/006 均通过真实调用（curl 打 tRPC 端点、直接 import 引擎函数跑脚本）验证，非仅代码审查。
+
+---
+
