@@ -13,6 +13,7 @@
   "dependencies": {
     "@x-workflow/db": "workspace:*",
     "@x-workflow/env": "workspace:*",
+    "bcryptjs": "^3.0.3",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:"

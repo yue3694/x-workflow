@@ -26,6 +26,7 @@
   "devDependencies": {
     "@types/node": "^22.13.14",
     "@x-workflow/config": "workspace:*",
+    "tsx": "^4.22.4",
     "typescript": "catalog:"
   },
   "packageManager": "pnpm@11.6.0"

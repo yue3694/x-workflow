@@ -34,7 +34,7 @@ export const authRouter = router({
       }
 
       // 创建用户
-      const newUser = await auth.api.signUp({
+      const newUser = await auth.api.signUpEmail({
         body: {
           email: input.email,
           password: input.password,

@@ -23,6 +23,32 @@ app.use(
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
+// Sign-up endpoint using better-auth handler
+app.post("/api/sign-up", async (c) => {
+  const body = await c.req.json();
+  const { email, password, name } = body;
+
+  if (!email || !password || !name) {
+    return c.json({ error: "Missing required fields" }, 400);
+  }
+
+  try {
+    // Forward to better-auth's sign-up handler
+    const response = await auth.api.signUpEmail({
+      body: { email, password, name },
+    } as any);
+
+    if ((response as any).status === false) {
+      return c.json({ error: (response as any).message || "Signup failed" }, 400);
+    }
+
+    return c.json({ success: true, user: (response as any).user });
+  } catch (error: any) {
+    console.error("Sign-up error:", error);
+    return c.json({ error: error.message || "Internal server error" }, 500);
+  }
+});
+
 app.use(
   "/trpc/*",
   trpcServer({

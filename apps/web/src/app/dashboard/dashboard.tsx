@@ -14,7 +14,6 @@ interface KpiCardProps {
   title: string;
   value: number | string;
   icon: React.ReactNode;
-  trend?: "up" | "down" | "neutral";
   colorClass: string;
 }
 
@@ -115,12 +114,8 @@ function ModelRuntimeCard({ name, latency, reliability, usage }: ModelRuntimeCar
 }
 
 export default function Dashboard({ session }: { session: Session }) {
-  const { data: stats, isLoading: statsLoading } = useQuery(
-    trpc.dashboard.getStats.queryOptions(),
-  );
-  const { data: workflowsData, isLoading: workflowsLoading } = useQuery(
-    trpc.workflow.list.queryOptions({ limit: 5 }),
-  );
+  const { data: stats, isLoading: statsLoading } = trpc.dashboard.getStats.useQuery();
+  const { data: workflowsData, isLoading: workflowsLoading } = trpc.workflow.list.useQuery({ limit: 5 });
 
   // Static model runtime configuration (per design.md - expandable later)
   const modelRuntimes: ModelRuntimeCardProps[] = [
@@ -149,12 +144,12 @@ export default function Dashboard({ session }: { session: Session }) {
               </h1>
             </div>
             <div className="flex gap-2">
-              <Button asChild variant="default" size="sm">
-                <Link href="/orchestrator">Enter Canvas</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/debugger">Analyze Stack</Link>
-              </Button>
+              <Link href="/orchestrator">
+                <Button variant="default" size="sm">Enter Canvas</Button>
+              </Link>
+              <Link href="/debugger">
+                <Button variant="outline" size="sm">Analyze Stack</Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -205,9 +200,9 @@ export default function Dashboard({ session }: { session: Session }) {
           <section>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Active Workflows</h2>
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/orchestrator">View All</Link>
-              </Button>
+              <Link href="/orchestrator">
+                <Button variant="ghost" size="sm">View All</Button>
+              </Link>
             </div>
             <Card>
               <CardContent className="p-0 divide-y divide-border/50">
