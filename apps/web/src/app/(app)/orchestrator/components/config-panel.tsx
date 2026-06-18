@@ -19,7 +19,7 @@ export function ConfigPanel({ selectedNode, onConfigUpdate }: ConfigPanelProps) 
   // Sync local config when selected node changes
   React.useEffect(() => {
     if (selectedNode) {
-      setLocalConfig(selectedNode.config ?? {});
+      setLocalConfig(selectedNode.config as Record<string, unknown> ?? {});
     } else {
       setLocalConfig({});
     }

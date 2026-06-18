@@ -21,7 +21,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@x-workflow/ui/*": ["../../packages/ui/src/*"]
+      "@x-workflow/ui/*": ["../../packages/ui/src/*"],
+      "@x-workflow/db/*": ["../../packages/db/src/*"]
     }
   },
   "include": [

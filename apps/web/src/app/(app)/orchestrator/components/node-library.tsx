@@ -3,92 +3,117 @@
 import * as React from "react";
 import { cn } from "@x-workflow/ui/lib/utils";
 import type { NodeType } from "@x-workflow/db/schema/workflow";
+import { useAutoTheme, LANGUAGES, type Language } from "@x-workflow/ui";
+import { Server, GitMerge, Layers3, FileText, Cpu } from "lucide-react";
 
 interface NodeLibraryItem {
   type: NodeType;
   name: string;
-  description: string;
+  subtitle: string;
+  desc: string;
+  colorClass: string;
   icon: React.ReactNode;
 }
-
-const nodeTypes: NodeLibraryItem[] = [
-  {
-    type: "trigger",
-    name: "触发源",
-    description: "Webhook / 定时触发",
-    icon: (
-      <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ),
-  },
-  {
-    type: "condition",
-    name: "分流条件",
-    description: "条件分支判断",
-    icon: (
-      <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-      </svg>
-    ),
-  },
-  {
-    type: "parallel",
-    name: "并发算子",
-    description: "并行执行任务",
-    icon: (
-      <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    ),
-  },
-  {
-    type: "multimodal",
-    name: "多模态合成",
-    description: "多模态内容处理",
-    icon: (
-      <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-  {
-    type: "llm_synthesis",
-    name: "LLM 合成引擎",
-    description: "AI 大模型调用",
-    icon: (
-      <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-      </svg>
-    ),
-  },
-];
 
 interface NodeLibraryProps {
   onAddNode: (type: NodeType) => void;
 }
 
 export function NodeLibrary({ onAddNode }: NodeLibraryProps) {
+  const { activeTheme } = useAutoTheme();
+  const [language, setLanguage] = React.useState<Language>("zh");
+  const strings = LANGUAGES[language];
+  const isDark = activeTheme === "dark";
+
+  const nodeTypes: NodeLibraryItem[] = [
+    {
+      type: "trigger",
+      name: strings.triggerNode,
+      subtitle: strings.triggerSub,
+      desc: "API Endpoint, Event Trigger, Cron Timer",
+      colorClass: "bg-amber-500/10 border-amber-500/30 text-amber-500",
+      icon: <Server className="size-4" />,
+    },
+    {
+      type: "condition",
+      name: strings.conditionNode,
+      subtitle: strings.conditionSub,
+      desc: "Heuristic classification & validation gating",
+      colorClass: "bg-emerald-500/10 border-emerald-500/30 text-emerald-500",
+      icon: <GitMerge className="size-4" />,
+    },
+    {
+      type: "parallel",
+      name: strings.parallelNode,
+      subtitle: strings.parallelSub,
+      desc: "High throughput chunk mapper",
+      colorClass: "bg-sky-500/10 border-sky-500/30 text-sky-500",
+      icon: <Layers3 className="size-4" />,
+    },
+    {
+      type: "multimodal",
+      name: strings.multimodalNode,
+      subtitle: strings.multimodalSub,
+      desc: "Vision and text vector fusion",
+      colorClass: "bg-purple-500/10 border-purple-500/30 text-purple-500",
+      icon: <FileText className="size-4" />,
+    },
+    {
+      type: "llm_synthesis",
+      name: strings.llmSynthesisTitle,
+      subtitle: strings.llmSynthesisDesc,
+      desc: "Complex cognitive prompt summarization",
+      colorClass: "bg-primary/10 border-primary/30 text-primary",
+      icon: <Cpu className="size-4" />,
+    },
+  ];
+
   return (
-    <div className="w-56 shrink-0 border-r bg-muted/20 p-4">
-      <h2 className="mb-4 text-sm font-semibold text-foreground">节点库</h2>
-      <div className="space-y-2">
+    <div
+      className={cn(
+        "w-72 shrink-0 p-4 overflow-y-auto",
+        isDark ? "bg-[#1E293B] border-slate-800" : "bg-background border-border"
+      )}
+    >
+      <div className="mb-4">
+        <h2 className="text-xs font-bold font-mono tracking-widest text-muted-foreground uppercase mb-1">
+          {strings.nodeLibrarySub}
+        </h2>
+        <h1 className="font-headline text-lg font-bold text-foreground">
+          {strings.nodeLibraryTitle}
+        </h1>
+      </div>
+
+      <div className="space-y-3">
         {nodeTypes.map((item) => (
           <button
             key={item.type}
             onClick={() => onAddNode(item.type)}
             className={cn(
-              "flex w-full items-start gap-3 rounded-md border p-3 text-left transition-colors",
-              "hover:border-primary/50 hover:bg-muted/50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "group w-full p-3.5 rounded-xl border text-left transition-all flex items-start gap-3 shadow-sm",
+              isDark
+                ? "bg-[#1E293B] border-slate-800 hover:border-primary/50 hover:bg-[#1E293B]"
+                : "bg-background border-border hover:border-primary/50 hover:bg-muted/50"
             )}
           >
-            <div className="rounded-md bg-primary/10 p-1.5 text-primary">
+            <div
+              className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
+                item.colorClass
+              )}
+            >
               {item.icon}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-foreground">{item.name}</p>
-              <p className="text-xs text-muted-foreground">{item.description}</p>
+            <div className="space-y-0.5 min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-xs font-bold text-foreground leading-tight">{item.name}</h3>
+                <span className="text-[9px] text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity font-bold font-mono">
+                  + {language === "en" ? "ADD" : "添加"}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground font-light line-clamp-2 leading-snug">
+                {item.desc}
+              </p>
             </div>
           </button>
         ))}

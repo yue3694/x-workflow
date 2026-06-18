@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@x-workflow/ui/components/dropdown-menu";
 import { ChevronDownIcon } from "lucide-react";
-import { trpc } from "~/utils/trpc";
+import { trpc } from "@/utils/trpc";
 import type { Role } from "./role-badge";
 
 const inviteSchema = z.object({
@@ -144,17 +144,14 @@ function InviteModal({ open, onOpenChange, onSuccess }: InviteModalProps) {
             <div className="grid gap-2">
               <Label>Role</Label>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between"
-                    type="button"
-                  >
-                    {roleLabels[formData.role]}
-                    <ChevronDownIcon className="ml-2 h-4 w-4 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="outline" role="combobox" className="w-full justify-between" type="button">
+                      {roleLabels[formData.role]}
+                      <ChevronDownIcon className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                  }
+                />
                 <DropdownMenuContent align="start">
                   <DropdownMenuRadioGroup
                     value={formData.role}

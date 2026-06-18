@@ -89,7 +89,8 @@ export function WorkflowToolbar({
   };
 
   // Handle load
-  const handleLoad = (id: string) => {
+  const handleLoad = (id: string | null) => {
+    if (!id) return;
     trpc.workflow.get.useQuery(
       { id },
       {
@@ -149,7 +150,7 @@ export function WorkflowToolbar({
           </SelectTrigger>
           <SelectContent>
             {listQuery.data?.workflows.map((wf) => (
-              <SelectItem key={wf.id} value={wf.id}>
+              <SelectItem key={wf.id} value={wf.id ?? ""}>
                 {wf.name} ({wf.nodeCount} 节点)
               </SelectItem>
             ))}

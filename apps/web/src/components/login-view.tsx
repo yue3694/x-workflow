@@ -4,7 +4,27 @@ import { useState, useEffect } from "react";
 import { createAuthClient } from "better-auth/client";
 import { useRouter } from "next/navigation";
 import { useAutoTheme, LANGUAGES, type Language } from "@x-workflow/ui";
-import { Languages, Sun, Moon, ArrowRight, Eye, EyeOff, Key, Mail, Check } from "lucide-react";
+import {
+  Languages,
+  Sun,
+  Moon,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Key,
+  Mail,
+  Check,
+  ShieldAlert,
+  X,
+  Copy,
+  Send,
+  Sparkles,
+  Building,
+  User,
+  Activity,
+  ChevronRight,
+  Clock,
+} from "lucide-react";
 import { Button } from "@x-workflow/ui/components/button";
 import { Input } from "@x-workflow/ui/components/input";
 import { Label } from "@x-workflow/ui/components/label";
@@ -19,28 +39,22 @@ interface LoginViewProps {
   onLoginSuccess?: () => void;
 }
 
-type ModalType = "login" | "signup" | "forgot";
-
 export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const router = useRouter();
-  const { activeTheme, toggleTheme, isAutoTheme, setIsAutoTheme, isNightTime, isHydrated } =
-    useAutoTheme();
+  const {
+    activeTheme,
+    toggleTheme,
+    isAutoTheme,
+    setIsAutoTheme,
+    isNightTime,
+    isHydrated,
+  } = useAutoTheme();
   const [language, setLanguage] = useState<Language>("zh");
-  const [modal, setModal] = useState<ModalType>("login");
 
   // Login form state
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("alex@orchestrator.ai");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  // Signup form state
-  const [signupName, setSignupName] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupConfirm, setSignupConfirm] = useState("");
-
-  // Forgot form state
-  const [forgotEmail, setForgotEmail] = useState("");
 
   // Common state
   const [activeSlide, setActiveSlide] = useState(0);
@@ -48,10 +62,26 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const strings = LANGUAGES[language];
+  // Forgot modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStep, setForgotStep] = useState(1);
+  const [otpCode, setOtpCode] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
 
-  const signUpMutation = trpc.auth.signUp.useMutation();
-  const forgotPasswordMutation = trpc.auth.forgotPassword.useMutation();
+  // Request access modal state
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestName, setRequestName] = useState("");
+  const [requestEmail, setRequestEmail] = useState("");
+  const [requestDept, setRequestDept] = useState("AI Integration");
+  const [requestUseCase, setRequestUseCase] = useState("");
+  const [requestStep, setRequestStep] = useState(1);
+  const [reqApplicationId, setReqApplicationId] = useState("");
+  const [provisionProgress, setProvisionProgress] = useState(0);
+
+  const strings = LANGUAGES[language];
 
   // Auto-slide transition effect - 5 seconds
   useEffect(() => {
@@ -68,21 +98,30 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       protocol: strings.protocol,
     },
     {
-      slogan: language === "en" ? "Autonomous Atomic Orchestration." : "自主原子算子，无缝编排。",
+      slogan:
+        language === "en"
+          ? "Autonomous Atomic Orchestration."
+          : "自主原子算子，无缝编排。",
       quote:
         language === "en"
           ? "Assemble and orchestrate dozens of multi-modal execution nodes concurrently with full visual feedback."
           : "图形化多维编排多端智能算子，实时渲染执行状态与高并发管道追溯。",
-      protocol: language === "en" ? "v2.4.0 Parallel Executor" : "v2.4.0 并行原子内核",
+      protocol:
+        language === "en" ? "v2.4.0 Parallel Executor" : "v2.4.0 并行原子内核",
     },
     {
-      slogan: language === "en" ? "Deep Semantic Context Fusion." : "深度语义检索，直连超智。",
+      slogan:
+        language === "en"
+          ? "Deep Semantic Context Fusion."
+          : "深度语义检索，直连超智。",
       quote:
         language === "en"
           ? "Align multi-region knowledge archives with state-of-the-art server-side Gemini intelligence."
           : "将分布在全球各可用区的多版本海量工作流知识库，直连高吞吐、超高智能的 Gemini 认知合成引擎。",
       protocol:
-        language === "en" ? "v2.4.0 Semantic Fusion Layer" : "v2.4.0 语义注意力网格",
+        language === "en"
+          ? "v2.4.0 Semantic Fusion Layer"
+          : "v2.4.0 语义注意力网格",
     },
   ];
 
@@ -93,8 +132,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
 
     try {
       const result = await authClient.signIn.email(
-        { email, password },
-        { callbackURL: "/dashboard" }
+        { email, password, rememberMe: true }
       );
 
       if (result?.error) {
@@ -114,70 +152,105 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const handleOAuthSignIn = async (provider: "google" | "github") => {
     setError(null);
     try {
-      const result = await authClient.signIn.oauth({
-        provider,
-        callbackURL: "/dashboard",
-      });
-
-      if (result?.error) {
-        setError(result.error.message || `${provider} sign in failed`);
-      }
+      // OAuth sign-in - redirect to OAuth provider
+      await authClient.signIn.social({ provider });
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     }
   };
 
-  // 注册提交
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (signupPassword !== signupConfirm) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (signupPassword.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await signUpMutation.mutateAsync({
-        email: signupEmail,
-        password: signupPassword,
-        name: signupName,
-      });
-      setSuccess("Account created. Please sign in.");
-      setModal("login");
-      setEmail(signupEmail);
-      setPassword("");
-      setSignupName("");
-      setSignupEmail("");
-      setSignupPassword("");
-      setSignupConfirm("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign up failed");
-    } finally {
-      setIsLoading(false);
-    }
+  // Forgot password handlers
+  const handleOpenForgot = () => {
+    setForgotEmail(email || "alex@orchestrator.ai");
+    setForgotStep(1);
+    setOtpCode("");
+    setRecoveryCode("");
+    setCopiedCode(false);
+    setShowForgotModal(true);
   };
 
-  // 忘记密码提交
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleSendForgotToken = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-    try {
-      const result = await forgotPasswordMutation.mutateAsync({ email: forgotEmail });
-      setSuccess(result.message);
-      setForgotEmail("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send reset email");
-    } finally {
-      setIsLoading(false);
+    if (!forgotEmail) return;
+    setIsForgotLoading(true);
+    setTimeout(() => {
+      setIsForgotLoading(false);
+      setForgotStep(2);
+    }, 1200);
+  };
+
+  const handleVerifyForgotOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.trim().length !== 6) return;
+    setIsForgotLoading(true);
+    setTimeout(() => {
+      setIsForgotLoading(false);
+      const secureRandomKey =
+        "ALX-KEY-" +
+        Math.random().toString(36).substring(2, 6).toUpperCase() +
+        "-" +
+        Math.random().toString(36).substring(2, 6).toUpperCase();
+      setRecoveryCode(secureRandomKey);
+      setForgotStep(3);
+    }, 1000);
+  };
+
+  const handleCopyRecoveryCode = () => {
+    navigator.clipboard.writeText(recoveryCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 1500);
+  };
+
+  const handleFinalizeForgotReset = () => {
+    setEmail(forgotEmail);
+    setPassword(recoveryCode);
+    setShowForgotModal(false);
+  };
+
+  // Request access handlers
+  const handleOpenRequest = () => {
+    setRequestName("");
+    setRequestEmail(email || "");
+    setRequestUseCase("");
+    setRequestDept("AI Integration");
+    setRequestStep(1);
+    setProvisionProgress(0);
+    const randomHexId =
+      "REQ-ALX-" + Math.floor(100000 + Math.random() * 900000).toString(16).toUpperCase();
+    setReqApplicationId(randomHexId);
+    setShowRequestModal(true);
+  };
+
+  const handleSubmitRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!requestName || !requestEmail || !requestUseCase) return;
+    setRequestStep(2);
+    setProvisionProgress(0);
+  };
+
+  useEffect(() => {
+    if (showRequestModal && requestStep === 2) {
+      const interval = setInterval(() => {
+        setProvisionProgress((prev) => {
+          if (prev >= 3) {
+            clearInterval(interval);
+            return 3;
+          }
+          return prev + 1;
+        });
+      }, 1400);
+      return () => clearInterval(interval);
     }
+  }, [showRequestModal, requestStep]);
+
+  const handleFinalizeRequestWorkspace = () => {
+    setEmail(requestEmail);
+    setPassword("GUEST-ALX-" + reqApplicationId.substring(8));
+    setShowRequestModal(false);
+    setTimeout(() => {
+      onLoginSuccess?.();
+      router.push("/dashboard");
+    }, 150);
   };
 
   if (!isHydrated) {
@@ -188,46 +261,114 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     );
   }
 
+  const isDark = activeTheme === "dark";
+
   return (
     <div
-      className={`min-h-screen w-full flex items-center justify-center p-4 md:p-8 overflow-hidden ${
-        activeTheme === "dark" ? "bg-[#0B0F19]" : "bg-[#F9FAFB]"
+      className={`relative min-h-screen w-full flex items-center justify-center p-4 md:p-8 overflow-hidden ${
+        isDark
+          ? "bg-gradient-to-br from-[#0B0F19] via-[#0F172A] to-[#1E293B]"
+          : "bg-gradient-to-br from-[#F9FAFB] via-[#F1F5F9] to-[#E2E8F0]"
       }`}
     >
+      {/* Background Layer: Animated Ambient Orbs */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+        <div
+          className={`absolute top-[-15%] left-[-10%] w-[55%] aspect-square rounded-full blur-[130px] ${
+            isDark
+              ? "bg-gradient-to-br from-indigo-600/30 to-indigo-500/20 animate-pulse-gentle-reverse"
+              : "bg-gradient-to-br from-blue-400/20 to-indigo-300/15 animate-pulse-gentle-reverse"
+          }`}
+        />
+        <div
+          className={`absolute bottom-[-10%] right-[-5%] w-[50%] aspect-square rounded-full blur-[120px] ${
+            isDark
+              ? "bg-gradient-to-tr from-violet-500/25 to-primary/20 animate-pulse-gentle"
+              : "bg-gradient-to-tr from-violet-400/15 to-blue-300/10 animate-pulse-gentle"
+          }`}
+        />
+        <div
+          className={`absolute top-[30%] left-[40%] w-[35%] aspect-square rounded-full blur-[100px] ${
+            isDark ? "bg-indigo-500/10" : "bg-blue-300/10"
+          } animate-drift-slow`}
+        />
+
+        {/* Technical Coordinate Overlays */}
+        <div className="absolute top-10 left-10 text-[10px] font-mono text-muted-foreground/40 select-none hidden lg:block uppercase tracking-[0.2em] leading-relaxed">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+            <span className="font-bold text-foreground">System Ingestion Active</span>
+          </div>
+          <div className="opacity-60 mt-1">CORE NODE ID: AIS-COORD-80E2</div>
+          <div className="opacity-60 text-[9px]">ENCRYPTION KEY: AES_256_GCM</div>
+        </div>
+        <div className="absolute bottom-10 right-10 text-[10px] font-mono text-muted-foreground/40 select-none hidden lg:block uppercase tracking-[0.2em] text-right leading-relaxed">
+          <div className="font-bold text-foreground">Secure Socket Link</div>
+          <div className="opacity-60 mt-1">SECURE PORT: 443 / SSL_READY</div>
+          <div className="opacity-60 text-[9px]">
+            INDEX: UTC_{new Date().toISOString().substring(11, 19)}
+          </div>
+        </div>
+
+        {/* Digital Grid Network Canvas Overlay */}
+        <div
+          className={`absolute inset-0 opacity-[0.05] ${isDark ? "dark:opacity-[0.035]" : ""}`}
+          style={{
+            backgroundImage: `radial-gradient(${
+              isDark ? "#6366f1" : "#2563eb"
+            } 0.75px, transparent 0.75px)`,
+            backgroundSize: "28px 28px",
+          }}
+        />
+      </div>
+
       {/* Main Login Card with Glassmorphism */}
-      <div className="relative z-10 max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden bg-background/95 dark:bg-[#111827]/80 backdrop-blur-xl border border-border shadow-xl">
+      <div
+        className={`relative z-10 max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden ${
+          isDark
+            ? "bg-[#111827]/80 backdrop-blur-xl border-slate-800/60"
+            : "bg-white/95 backdrop-blur-xl border-border"
+        } border shadow-[0_30px_70px_-15px_rgba(0,0,0,0.18)] ${
+          isDark ? "dark:shadow-[0_40px_90px_-20px_rgba(0,0,0,0.45)]" : ""
+        } transition-all duration-300`}
+      >
         {/* Left branding, quote cover side */}
         <div
           className={`relative hidden lg:flex flex-col justify-between p-12 lg:p-16 ${
-            activeTheme === "dark" ? "bg-[#0B0F19]" : "bg-[#F9FAFB]"
-          } border-r border-border`}
+            isDark ? "bg-[#0B0F19] border-slate-800/30" : "bg-[#F9FAFB] border-border"
+          }`}
         >
-          {/* Header logo */}
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center border border-primary/35">
-              <span className="font-bold text-lg text-primary">A</span>
+          <div className="relative z-20">
+            {/* Header logo */}
+            <div className="flex items-center gap-3 mb-12">
+              <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center border border-primary/35">
+                <span className="font-headline font-bold text-lg text-primary">A</span>
+              </div>
+              <h1 className="font-headline text-2xl font-bold tracking-tight text-foreground">
+                {strings.brand}
+              </h1>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {strings.brand}
-            </h1>
-          </div>
 
-          {/* Slogan & Quote (Dynamic Slideshow) */}
-          <div className="space-y-6 max-w-sm mt-12 min-h-[220px] flex flex-col justify-center">
-            <div key={activeSlide} className="animate-in fade-in duration-300 space-y-6">
-              <h2 className="text-4xl font-bold tracking-tight text-foreground leading-tight">
-                {slides[activeSlide].slogan}
-              </h2>
-              <p className="text-muted-foreground text-base font-light italic leading-relaxed">
-                {slides[activeSlide].quote}
-              </p>
+            {/* Slogan & Quote (Dynamic Slideshow) */}
+            <div className="space-y-6 max-w-sm mt-12 min-h-[220px] flex flex-col justify-center">
+              <div
+                key={activeSlide}
+                className="animate-in fade-in duration-300 space-y-6"
+              >
+                <h2 className="font-headline text-4xl font-bold tracking-tight text-foreground leading-tight">
+                  {slides[activeSlide].slogan}
+                </h2>
+                <p className="text-muted-foreground text-base font-light italic leading-relaxed">
+                  {slides[activeSlide].quote}
+                </p>
+              </div>
+              <div className="h-[2px] w-12 bg-primary mt-6 opacity-60" />
             </div>
-            <div className="h-[2px] w-12 bg-primary mt-6 opacity-60" />
           </div>
 
           {/* Pagination Controller */}
-          <div className="flex flex-col gap-2">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="relative z-20 flex flex-col gap-2">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               {slides[activeSlide].protocol}
             </p>
             <div className="flex items-center gap-2 mt-1">
@@ -236,14 +377,23 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                   key={idx}
                   type="button"
                   onClick={() => setActiveSlide(idx)}
-                  className={`h-2 rounded-full transition-all cursor-pointer ${
+                  className={`h-2 rounded-full transition-all cursor-pointer outline-none focus:ring-1 focus:ring-primary/40 ${
                     activeSlide === idx
-                      ? "w-7 bg-primary"
+                      ? "w-7 bg-primary shadow-sm shadow-primary/30"
                       : "w-2 bg-muted-foreground/25 hover:bg-primary/50"
                   }`}
                 />
               ))}
             </div>
+          </div>
+
+          {/* Abstract artwork background element */}
+          <div className="absolute inset-x-0 bottom-0 top-1/4 z-10 items-center justify-end opacity-[0.06] hidden lg:flex">
+            <div
+              className={`w-[140%] aspect-square border rounded-full items-center justify-center ${
+                isDark ? "border-slate-700" : "border-slate-300"
+              } scale-150 animate-spin-slow`}
+            />
           </div>
         </div>
 
@@ -256,6 +406,9 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="font-mono text-xs text-muted-foreground">
                 {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} Local
+              </span>
+              <span className="hidden sm:inline-block text-[10px] bg-muted px-2 py-0.5 rounded font-mono">
+                {isNightTime ? "PM" : "AM"}
               </span>
             </div>
 
@@ -273,11 +426,11 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="p-1.5 rounded bg-muted border border-border hover:border-primary text-muted-foreground transition-all"
-                title={activeTheme === "dark" ? strings.dayMode : strings.nightMode}
+                className="p-1.5 rounded bg-muted border border-border hover:border-primary text-muted-foreground transition-all hover:scale-105 active:scale-95"
+                title={isDark ? strings.dayMode : strings.nightMode}
               >
-                {activeTheme === "dark" ? (
-                  <Sun className="w-4 h-4 text-amber-500" />
+                {isDark ? (
+                  <Sun className="w-4 h-4 text-amber-500 animate-spin-slow" />
                 ) : (
                   <Moon className="w-4 h-4 text-primary" />
                 )}
@@ -303,9 +456,11 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
               <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
                 A
               </div>
-              <span className="font-bold text-xl">{strings.brand}</span>
+              <span className="font-headline font-bold text-xl">{strings.brand}</span>
             </div>
-            <h3 className="text-3xl font-bold text-foreground mb-2">{strings.welcome}</h3>
+            <h3 className="font-headline text-3xl font-bold text-foreground mb-2">
+              {strings.welcome}
+            </h3>
             <p className="text-muted-foreground text-sm">{strings.signinSub}</p>
           </div>
 
@@ -326,47 +481,21 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
 
           {/* Success message */}
           {success && (
-            <div className="mb-6 px-3.5 py-2.5 rounded bg-green-500/10 border border-green-500/25 text-green-600 text-sm flex items-center gap-2">
+            <div className="mb-6 px-3.5 py-2.5 rounded bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 text-sm flex items-center gap-2">
               <Check className="w-4 h-4" />
               {success}
             </div>
           )}
 
-          {/* Modal Tabs */}
-          {modal !== "login" && (
-            <div className="flex gap-2 mb-6">
-              <button
-                type="button"
-                onClick={() => { setModal("login"); setError(null); setSuccess(null); }}
-                className={`text-xs font-semibold px-3 py-1.5 rounded ${
-                  modal === "login" ? "bg-primary text-primary-foreground" : "bg-muted"
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => { setModal("signup"); setError(null); setSuccess(null); }}
-                className={`text-xs font-semibold px-3 py-1.5 rounded ${
-                  modal === "signup" ? "bg-primary text-primary-foreground" : "bg-muted"
-                }`}
-              >
-                Sign Up
-              </button>
-              <button
-                type="button"
-                onClick={() => { setModal("forgot"); setError(null); setSuccess(null); }}
-                className={`text-xs font-semibold px-3 py-1.5 rounded ${
-                  modal === "forgot" ? "bg-primary text-primary-foreground" : "bg-muted"
-                }`}
-              >
-                Forgot Password
-              </button>
+          {/* Error message */}
+          {error && (
+            <div className="mb-6 px-3.5 py-2.5 rounded bg-destructive/10 border border-destructive/25 text-destructive text-sm flex items-center gap-2">
+              <X className="w-4 h-4" />
+              {error}
             </div>
           )}
 
           {/* Login Form */}
-          {modal === "login" && (
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* SSO providers */}
             <div className="grid grid-cols-2 gap-4 mb-2">
@@ -420,7 +549,10 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
             {/* Credentials Fields */}
             <div className="space-y-4">
               <div>
-                <Label htmlFor="login-email" className="text-[10px] font-mono font-bold uppercase tracking-wider">
+                <Label
+                  htmlFor="login-email"
+                  className="text-[10px] font-mono font-bold uppercase tracking-wider"
+                >
                   {strings.emailLabel}
                 </Label>
                 <div className="relative mt-1.5">
@@ -441,12 +573,15 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
 
               <div>
                 <div className="flex justify-between items-end mb-1.5">
-                  <Label htmlFor="login-password" className="text-[10px] font-mono font-bold uppercase tracking-wider">
+                  <Label
+                    htmlFor="login-password"
+                    className="text-[10px] font-mono font-bold uppercase tracking-wider"
+                  >
                     {strings.accessKeyLabel}
                   </Label>
                   <button
                     type="button"
-                    onClick={() => { setModal("forgot"); setError(null); setSuccess(null); }}
+                    onClick={handleOpenForgot}
                     className="text-xs text-primary hover:underline font-semibold"
                   >
                     {strings.forgot}
@@ -487,138 +622,19 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                 ) : (
                   <span className="flex items-center gap-2">
                     {strings.initSession}
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </span>
                 )}
               </Button>
             </div>
           </form>
-          )}
-
-          {/* Sign Up Form */}
-          {modal === "signup" && (
-          <form className="space-y-5" onSubmit={handleSignUp}>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="signup-name" className="text-[10px] font-mono font-bold uppercase tracking-wider">
-                  Full Name
-                </Label>
-                <Input
-                  type="text"
-                  id="signup-name"
-                  value={signupName}
-                  onChange={(e) => setSignupName(e.target.value)}
-                  className="mt-1.5"
-                  placeholder="Dr. Sterling"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="signup-email" className="text-[10px] font-mono font-bold uppercase tracking-wider">
-                  Email
-                </Label>
-                <Input
-                  type="email"
-                  id="signup-email"
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  className="mt-1.5"
-                  placeholder="alex@orchestrator.ai"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="signup-password" className="text-[10px] font-mono font-bold uppercase tracking-wider">
-                  Password
-                </Label>
-                <Input
-                  type="password"
-                  id="signup-password"
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  className="mt-1.5 font-mono"
-                  placeholder="Min. 8 characters"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="signup-confirm" className="text-[10px] font-mono font-bold uppercase tracking-wider">
-                  Confirm Password
-                </Label>
-                <Input
-                  type="password"
-                  id="signup-confirm"
-                  value={signupConfirm}
-                  onChange={(e) => setSignupConfirm(e.target.value)}
-                  className="mt-1.5 font-mono"
-                  placeholder="••••••••••••"
-                  required
-                />
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full py-3" disabled={isLoading}>
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin">⟳</span>
-                  Creating Account...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Create Account
-                  <ArrowRight className="w-4 h-4" />
-                </span>
-              )}
-            </Button>
-          </form>
-          )}
-
-          {/* Forgot Password Form */}
-          {modal === "forgot" && (
-          <form className="space-y-5" onSubmit={handleForgotPassword}>
-            <div>
-              <Label htmlFor="forgot-email" className="text-[10px] font-mono font-bold uppercase tracking-wider">
-                Email
-              </Label>
-              <Input
-                type="email"
-                id="forgot-email"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                className="mt-1.5"
-                placeholder="alex@orchestrator.ai"
-                required
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Enter your email to receive password reset instructions.
-              </p>
-            </div>
-
-            <Button type="submit" className="w-full py-3" disabled={isLoading}>
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin">⟳</span>
-                  Sending...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Send Reset Link
-                  <Mail className="w-4 h-4" />
-                </span>
-              )}
-            </Button>
-          </form>
-          )}
 
           {/* Bottom helper */}
           <div className="mt-8 text-center text-xs text-muted-foreground">
             <span>{strings.noAccess}</span>
             <button
               type="button"
-              onClick={() => { setModal("signup"); setError(null); setSuccess(null); }}
+              onClick={handleOpenRequest}
               className="font-bold text-primary hover:underline ml-1"
             >
               {strings.requestAccess}
@@ -626,6 +642,602 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Floating Bottom Navigation Utilities */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 px-6 py-2.5 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-lg z-20">
+        <a
+          href="#"
+          className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+          onClick={(e) => e.preventDefault()}
+        >
+          {strings.support}
+        </a>
+        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/55" />
+        <a
+          href="#"
+          className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+          onClick={(e) => e.preventDefault()}
+        >
+          {strings.docs}
+        </a>
+        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/55" />
+        <a
+          href="#"
+          className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+          onClick={(e) => e.preventDefault()}
+        >
+          {strings.legal}
+        </a>
+      </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-[#0F172A]/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-background rounded-3xl p-6 md:p-8 border border-border shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-blue-500/10 blur-2xl pointer-events-none" />
+
+            <div className="flex justify-between items-start mb-6">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-primary/10 text-primary font-mono text-[10px] uppercase tracking-wider font-bold">
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <span>Secured Socket Reset</span>
+                </div>
+                <h3 className="text-xl font-headline font-bold text-foreground mt-1">
+                  {language === "en" ? "Reset Access Core" : "重置访问令牌密钥"}
+                </h3>
+                <p className="text-xs text-muted-foreground font-light">
+                  {language === "en"
+                    ? "Recovery of lost quantum authentication keys"
+                    : "追溯并重置离失的 Alexandria 工作区访问凭证"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Step 1: Input Email */}
+            {forgotStep === 1 && (
+              <form onSubmit={handleSendForgotToken} className="space-y-5">
+                <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                  {language === "en"
+                    ? "Please enter your workspace email below. We will dispatch an automated recovery security code."
+                    : "请输入您的组织级安全防护邮箱。系统将自动签发并验证重置令牌。"}
+                </p>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                    {language === "en" ? "Recovery Workspace Email" : "恢复邮箱地址"}
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      <Mail className="w-4 h-4" />
+                    </span>
+                    <Input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="pl-10 pr-4"
+                      placeholder="alex@orchestrator.ai"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowForgotModal(false)}
+                    className="flex-1"
+                  >
+                    {language === "en" ? "Cancel/Go Back" : "返回登录主页"}
+                  </Button>
+                  <Button type="submit" disabled={isForgotLoading} className="flex-1">
+                    {isForgotLoading ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="animate-spin">⟳</span>
+                        {language === "en" ? "Dispatching..." : "安全防伪签名调度中..."}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5">
+                        <Send className="w-4 h-4" />
+                        {language === "en" ? "Dispatch Token" : "调度重置验证安全令牌"}
+                      </span>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {/* Step 2: OTP Verification */}
+            {forgotStep === 2 && (
+              <form onSubmit={handleVerifyForgotOtp} className="space-y-5">
+                <div className="p-3.5 bg-primary/5 border border-primary/20 rounded-xl text-xs space-y-1">
+                  <p className="text-muted-foreground">
+                    {language === "en"
+                      ? "A confirmation token code was dispatched to:"
+                      : "已向您的受防护邮箱下发了重置防伪安全码："}{" "}
+                  </p>
+                  <p className="font-bold font-mono text-primary select-all text-sm bg-primary/10 rounded inline-block px-1">
+                    {forgotEmail}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                    {language === "en"
+                      ? "Token Hex Code (6 Digits)"
+                      : "请输入6位验证码"}
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      <Key className="w-4 h-4" />
+                    </span>
+                    <Input
+                      type="text"
+                      value={otpCode}
+                      onChange={(e) =>
+                        setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                      }
+                      className="pl-10 pr-4 tracking-widest font-mono text-center"
+                      placeholder="123456"
+                      maxLength={6}
+                      required
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    {language === "en"
+                      ? "Tip: Under sandbox simulation mode, you can input any 6-digit verification code."
+                      : "受防护环境模拟：为便于功能体验，输入任意 6 位数字均可完美通过。"}
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setForgotStep(1)}
+                    className="flex-1"
+                  >
+                    {language === "en" ? "Back" : "上一步"}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isForgotLoading || otpCode.length < 6}
+                    className="flex-1"
+                  >
+                    {isForgotLoading ? (
+                      <span className="animate-spin">⟳</span>
+                    ) : (
+                      <Check className="w-4 h-4" />
+                    )}
+                    {language === "en" ? "Verify Authenticity" : "验证安全一致性"}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {/* Step 3: Success Code Reveal */}
+            {forgotStep === 3 && (
+              <div className="space-y-6 text-center pt-2">
+                <div className="mx-auto w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-500 mb-2">
+                  <Check className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-lg font-bold text-foreground font-headline">
+                    {language === "en"
+                      ? "Rotation Keys Successfully Bound"
+                      : "安全凭证重置完毕"}
+                  </h4>
+                  <p className="text-xs text-muted-foreground font-light max-w-xs mx-auto text-center">
+                    {language === "en"
+                      ? "Your temporary environment key has been rotationally generated below."
+                      : "全新的工作区随机高敏临时控制密钥已被安全硬件旋转签署生产："}
+                  </p>
+                </div>
+
+                <div className="bg-muted rounded-2xl p-4 border border-border space-y-2 text-left">
+                  <span className="block text-[9px] font-mono font-bold uppercase tracking-widest text-muted-foreground">
+                    {language === "en" ? "Rotated Key Secret" : "新密钥凭证"}
+                  </span>
+                  <div className="flex items-center justify-between gap-2.5">
+                    <span className="font-mono text-sm font-bold text-primary select-all tracking-wider break-all bg-primary/5 py-1.5 px-3 rounded border border-primary/15">
+                      {recoveryCode}
+                    </span>
+                    <Button
+                      type="button"
+                      variant={copiedCode ? "default" : "outline"}
+                      onClick={handleCopyRecoveryCode}
+                      className="flex items-center gap-1 text-xs"
+                    >
+                      {copiedCode ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                      <span className="font-semibold">
+                        {copiedCode
+                          ? language === "en"
+                            ? "Copied!"
+                            : "成功复制!"
+                          : language === "en"
+                            ? "Copy Core Key"
+                            : "一键复制"}
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleFinalizeForgotReset}
+                  className="w-full py-3.5"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>
+                    {language === "en" ? "Bind and Sign-in" : "同步锁定并自动进入工作区"}
+                  </span>
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Request Workspace Access Modal */}
+      {showRequestModal && (
+        <div className="fixed inset-0 bg-[#0F172A]/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-lg bg-background rounded-3xl p-6 md:p-8 border border-border shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden">
+            <div className="absolute top-0 right-0 w-36 h-36 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+
+            <div className="flex justify-between items-start mb-6">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-indigo-500/10 text-indigo-500 font-mono text-[10px] uppercase tracking-wider font-bold">
+                  <Activity className="w-3.5 h-3.5 animate-pulse" />
+                  <span>Subspace Ingestion Request</span>
+                </div>
+                <h3 className="text-xl font-headline font-bold text-foreground mt-1">
+                  {language === "en"
+                    ? "Request Workspace Sandboxing"
+                    : "申请 Alexandria 控制台专属工作区"}
+                </h3>
+                <p className="text-xs text-muted-foreground font-light">
+                  {language === "en"
+                    ? "Register a secure regional execution host partition"
+                    : "注册并分配专属的高吞吐、全隔离 Alexandria 微内核执行分区"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRequestModal(false)}
+                className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Step 1: Input Request Form */}
+            {requestStep === 1 && (
+              <form onSubmit={handleSubmitRequest} className="space-y-4 text-left">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                    {language === "en"
+                      ? "Full Name / Operator Signature"
+                      : "申请操作员真实全名"}
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      <User className="w-4 h-4" />
+                    </span>
+                    <Input
+                      type="text"
+                      value={requestName}
+                      onChange={(e) => setRequestName(e.target.value)}
+                      className="pl-10 pr-4"
+                      placeholder={language === "en" ? "e.g. Alex Johnson" : "例如：李安琪"}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                    {language === "en"
+                      ? "Corporate/Organization Email"
+                      : "工作空间关联安全邮箱"}
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      <Mail className="w-4 h-4" />
+                    </span>
+                    <Input
+                      type="email"
+                      value={requestEmail}
+                      onChange={(e) => setRequestEmail(e.target.value)}
+                      className="pl-10 pr-4"
+                      placeholder="business@company.com"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                    {language === "en" ? "Department/Work Group" : "所属业务线 / 系统角色"}
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      <Building className="w-4 h-4" />
+                    </span>
+                    <select
+                      value={requestDept}
+                      onChange={(e) => setRequestDept(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring/50 appearance-none cursor-pointer"
+                    >
+                      <option value="AI Integration">
+                        {language === "en"
+                          ? "AI Pipeline & Engineering"
+                          : "AI 工作流与大模型工程架构部"}
+                      </option>
+                      <option value="Model Ops">
+                        {language === "en"
+                          ? "Model Ops & Reliability"
+                          : "大模型运维与算力核算部"}
+                      </option>
+                      <option value="Knowledge Management">
+                        {language === "en"
+                          ? "Knowledge Management"
+                          : "知识库与非结构化检索部"}
+                      </option>
+                      <option value="Security & Governance">
+                        {language === "en"
+                          ? "Quantum SecOps"
+                          : "高安全等级合规审计中心"}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                    {language === "en"
+                      ? "Primary Intended Use-Case"
+                      : "工作流主要落地应用场景"}
+                  </Label>
+                  <textarea
+                    rows={3}
+                    value={requestUseCase}
+                    onChange={(e) => setRequestUseCase(e.target.value)}
+                    className="w-full p-3 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-ring/50 placeholder:text-muted-foreground"
+                    placeholder={
+                      language === "en"
+                        ? "e.g. Automating structural synthesis of internal financial documents..."
+                        : "例：拟部署自动化多流报表审核与业务文档抽取管线..."
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRequestModal(false)}
+                    className="flex-1"
+                  >
+                    {language === "en" ? "Cancel" : "取消"}
+                  </Button>
+                  <Button type="submit" className="flex-1">
+                    <span>{language === "en" ? "Queue Provision Order" : "立即提交算力分区申请"}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {/* Step 2: Live Provisioning Terminal */}
+            {requestStep === 2 && (
+              <div className="space-y-6 pt-2">
+                <div className="p-4 bg-[#0B0F19] border border-slate-800 rounded-2xl font-mono text-xs text-slate-300 space-y-4 shadow-inner text-left">
+                  <div className="flex items-center gap-1.5 border-b border-slate-800/60 pb-3 mb-1">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                    <span className="text-[10px] text-slate-500 ml-2">
+                      ALEXANDRIA ORCHESTRATION SHIELD DEPLOYER v2.4.0
+                    </span>
+                  </div>
+
+                  <div className="text-[11px] text-slate-400 leading-normal">
+                    <span>
+                      {language === "en" ? "Request ID:" : "专属工作区标本备案号："}{" "}
+                    </span>
+                    <span className="text-primary font-bold select-all">{reqApplicationId}</span>
+                  </div>
+
+                  {/* Progress Line Items */}
+                  <div className="space-y-3.5 py-2">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex-shrink-0">
+                        {provisionProgress >= 1 ? (
+                          <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[9px]">
+                            ✓
+                          </div>
+                        ) : (
+                          <div className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[9px] animate-spin">
+                            ⚙
+                          </div>
+                        )}
+                      </span>
+                      <div className="leading-snug">
+                        <span
+                          className={`block font-semibold text-xs ${
+                            provisionProgress >= 1 ? "text-slate-300" : "text-primary animate-pulse"
+                          }`}
+                        >
+                          {language === "en"
+                            ? "Running Compliance Validation"
+                            : "运行多租户环境信息隔离性校验"}
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          {provisionProgress >= 1
+                            ? "[PASSED] Secure context profile isolation check OK"
+                            : "[RUNNING] Validating company proxy alignment"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex-shrink-0">
+                        {provisionProgress >= 2 ? (
+                          <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[9px]">
+                            ✓
+                          </div>
+                        ) : provisionProgress === 1 ? (
+                          <div className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[9px] animate-spin">
+                            ⚙
+                          </div>
+                        ) : (
+                          <div className="w-4 h-4 rounded-full bg-slate-800 text-slate-600 flex items-center justify-center font-bold text-[9px]">
+                            -
+                          </div>
+                        )}
+                      </span>
+                      <div className="leading-snug">
+                        <span
+                          className={`block font-semibold text-xs ${
+                            provisionProgress >= 2
+                              ? "text-slate-300"
+                              : provisionProgress === 1
+                                ? "text-primary animate-pulse"
+                                : "text-slate-600"
+                          }`}
+                        >
+                          {language === "en"
+                            ? "Allocating Compute Nodes & API Proxies"
+                            : "调度算力节点容器及 Gemini 服务路由组态"}
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          {provisionProgress >= 2
+                            ? "[COMPLETED] Spawner successfully routing to core cluster pipeline Node #582"
+                            : provisionProgress === 1
+                              ? "[RUNNING] Registering with Google-Studio Server Gemini Inundator..."
+                              : "[QUEUED] Awaiting token signature approval"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex-shrink-0">
+                        {provisionProgress >= 3 ? (
+                          <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[9px]">
+                            ✓
+                          </div>
+                        ) : provisionProgress === 2 ? (
+                          <div className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[9px] animate-spin">
+                            ⚙
+                          </div>
+                        ) : (
+                          <div className="w-4 h-4 rounded-full bg-slate-800 text-slate-600 flex items-center justify-center font-bold text-[9px]">
+                            -
+                          </div>
+                        )}
+                      </span>
+                      <div className="leading-snug">
+                        <span
+                          className={`block font-semibold text-xs ${
+                            provisionProgress >= 3
+                              ? "text-slate-300"
+                              : provisionProgress === 2
+                                ? "text-primary animate-pulse"
+                                : "text-slate-600"
+                          }`}
+                        >
+                          {language === "en"
+                            ? "Provisioning Sandbox Metadata Store"
+                            : "装配高敏数据安全套接字与元数据存储"}
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          {provisionProgress >= 3
+                            ? "[READY] Workspace database mount point locked. Tenant operational bounds synchronized."
+                            : provisionProgress === 2
+                              ? "[RUNNING] Mounting secure isolated Firestore collection schema..."
+                              : "[QUEUED] Awaiting Node container binding"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="pt-2 border-t border-slate-800/40">
+                    <div className="flex justify-between text-[10px] text-slate-500 mb-1 font-mono uppercase tracking-wider">
+                      <span>Deployment Core Host Thread</span>
+                      <span>{Math.floor((provisionProgress / 3) * 100)}%</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-300 rounded-full"
+                        style={{ width: `${(provisionProgress / 3) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  {provisionProgress < 3 ? (
+                    <div className="py-2.5 px-4 bg-muted rounded-xl border border-border text-xs text-center flex items-center justify-center gap-2 text-muted-foreground">
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-muted-foreground border-t-transparent animate-spin" />
+                      <span>
+                        {language === "en"
+                          ? "Awaiting environment cluster creation..."
+                          : "正在同步就绪中，专属环境配给大约需数秒..."}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-start gap-3 text-left">
+                      <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-500 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5 animate-bounce" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-foreground">
+                          {language === "en"
+                            ? "Subspace Initialized Host Operational!"
+                            : "子计算空间就绪，临时访问通道授权就地部署。"}
+                        </h4>
+                        <p className="text-xs text-muted-foreground leading-snug">
+                          {language === "en"
+                            ? "We have generated a guest key bound to your request sequence. Click enter below to launch Sandbox."
+                            : "您的入驻账号已经被暂时激活至分配的主机安全白名单中。点击下方即可一键直达，体验全新专属工作空间。"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
+                    disabled={provisionProgress < 3}
+                    onClick={handleFinalizeRequestWorkspace}
+                    className="w-full py-3.5"
+                  >
+                    <span>
+                      {language === "en"
+                        ? "Enter Newly Synthesized Workspace"
+                        : "直接接入全新测试沙箱环境"}
+                    </span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

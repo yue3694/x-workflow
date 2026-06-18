@@ -9,7 +9,7 @@ const AUTO_KEY = "x-workflow-auto-theme";
 
 export function useAutoTheme() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("auto");
-  const [isAutoTheme, setIsAutoTheme] = useState(true);
+  const [isAuto, setIsAuto] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Hydrate from localStorage on mount
@@ -19,7 +19,7 @@ export function useAutoTheme() {
 
     if (storedTheme) {
       setThemeMode(storedTheme);
-      setIsAutoTheme(storedAuto === "true");
+      setIsAuto(storedAuto === "true");
     }
     setIsHydrated(true);
   }, []);
@@ -27,11 +27,7 @@ export function useAutoTheme() {
   const localHour = new Date().getHours();
   const isNightTime = localHour < 6 || localHour >= 18;
 
-  const activeTheme = isAutoTheme
-    ? isNightTime
-      ? "dark"
-      : "light"
-    : themeMode;
+  const activeTheme = isAuto ? (isNightTime ? "dark" : "light") : themeMode;
 
   // Apply theme to document
   useEffect(() => {
@@ -47,21 +43,21 @@ export function useAutoTheme() {
   const toggleTheme = () => {
     const newTheme = activeTheme === "dark" ? "light" : "dark";
     setThemeMode(newTheme);
-    setIsAutoTheme(false);
+    setIsAuto(false);
     localStorage.setItem(STORAGE_KEY, newTheme);
     localStorage.setItem(AUTO_KEY, "false");
   };
 
-  const enableAuto = () => {
-    setIsAutoTheme(true);
-    localStorage.setItem(AUTO_KEY, "true");
+  const setIsAutoTheme = (auto: boolean) => {
+    setIsAuto(auto);
+    localStorage.setItem(AUTO_KEY, String(auto));
   };
 
   return {
     themeMode,
     setThemeMode,
-    isAutoTheme,
-    setIsAutoTheme: enableAuto,
+    isAutoTheme: isAuto,
+    setIsAutoTheme,
     activeTheme,
     toggleTheme,
     isNightTime,

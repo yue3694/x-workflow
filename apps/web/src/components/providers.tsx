@@ -37,7 +37,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       links: [
         httpBatchLink({
           url: `${env.NEXT_PUBLIC_SERVER_URL}/trpc`,
-          credentials: "include",
         }),
       ],
     }),

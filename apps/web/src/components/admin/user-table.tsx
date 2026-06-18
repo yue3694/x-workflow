@@ -12,16 +12,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@x-workflow/ui/components/dialog";
-import { trpc } from "~/utils/trpc";
+import { trpc } from "@/utils/trpc";
 
 type User = {
   id: string;
   name: string;
   email: string;
   image: string | null;
-  role: Role;
-  createdAt: Date | null;
-  updatedAt: Date | null;
+  role: Role | string;
+  createdAt: string | Date | null;
+  updatedAt: string | Date | null;
 };
 
 interface UserTableProps {
@@ -65,7 +65,7 @@ function UserTable({ users, currentUserId, onInviteClick }: UserTableProps) {
     setDeleteUserId(null);
   };
 
-  const formatDate = (date: Date | null) => {
+  const formatDate = (date: string | Date | null) => {
     if (!date) return "-";
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
@@ -127,7 +127,7 @@ function UserTable({ users, currentUserId, onInviteClick }: UserTableProps) {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <RoleBadge role={user.role} />
+                    <RoleBadge role={user.role as Role} />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {formatDate(user.updatedAt)}

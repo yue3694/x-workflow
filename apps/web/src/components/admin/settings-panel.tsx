@@ -2,16 +2,14 @@
 
 import { Switch } from "@x-workflow/ui/components/switch";
 import { Label } from "@x-workflow/ui/components/label";
-import { trpc } from "~/utils/trpc";
-
-type SettingsResponse = {
-  strictHierarchy: boolean;
-  encryptionVault: boolean;
-  externalAccess: boolean;
-};
+import { trpc } from "@/utils/trpc";
 
 interface SettingsPanelProps {
-  settings: SettingsResponse;
+  settings: {
+    strictHierarchy: boolean;
+    encryptionVault: boolean;
+    externalAccess: boolean;
+  };
 }
 
 function SettingsPanel({ settings: initialSettings }: SettingsPanelProps) {
@@ -30,7 +28,7 @@ function SettingsPanel({ settings: initialSettings }: SettingsPanelProps) {
     },
   });
 
-  const handleToggle = (key: keyof Omit<SettingsResponse, never>, value: boolean) => {
+  const handleToggle = (key: "strictHierarchy" | "encryptionVault" | "externalAccess", value: boolean) => {
     updateSettingsMutation.mutate({ [key]: value });
   };
 

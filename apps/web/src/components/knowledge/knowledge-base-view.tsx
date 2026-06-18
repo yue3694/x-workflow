@@ -100,7 +100,7 @@ export function KnowledgeBaseView() {
             <DragDropUpload
               onUpload={handleUpload}
               isUploading={isUploading}
-              supportedTypes={config.supportedTypes}
+              supportedTypes={[...config.supportedTypes]}
               maxSize={config.maxFileSizeFormatted}
             />
           )}
