@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { httpBatchLink } from "@trpc/client";
 import { Toaster } from "@x-workflow/ui/components/sonner";
-import { TRPCProvider } from "@/utils/trpc";
-import type { AppRouter } from "@x-workflow/api/routers/index";
+import { trpc } from "@/utils/trpc";
 import { env } from "@x-workflow/env/web";
 
 import { ThemeProvider } from "./theme-provider";
@@ -34,7 +33,7 @@ function getQueryClient() {
 export default function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
+    trpc.createClient({
       links: [
         httpBatchLink({
           url: `${env.NEXT_PUBLIC_SERVER_URL}/trpc`,
@@ -46,12 +45,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <QueryClientProvider client={queryClient}>
-        <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
           {children}
           <ReactQueryDevtools />
-        </TRPCProvider>
-      </QueryClientProvider>
+        </QueryClientProvider>
+      </trpc.Provider>
       <Toaster richColors />
     </ThemeProvider>
   );
