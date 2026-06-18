@@ -18,3 +18,18 @@
 - **LESSONS.md**：已追加 `Feature: auth-completion` 章节。
 
 ---
+
+## 2026-06-18 — Feature 2: debugger-llm-integration
+
+- **状态**：开发完成（6/6 task），已通过 N4 Audit、N5 Validate（Pass，AC-001/AC-004 延后补测，已与用户确认）。
+- **飞书推送**：❌ 未执行 —— 同上，本环境无 `mcp__feishu__*` 工具，按 N7 异常处理规则降级为本地日志记录。
+- **开发摘要**：
+  - `packages/env/src/server.ts` 新增可选 `GEMINI_API_KEY`（T-001）。
+  - 新建 `packages/api/src/utils/gemini.ts`：`isGeminiConfigured()` + `generateReply()`，引入 `@google/genai@^2.8.0` 依赖（T-002）。
+  - `packages/api/src/routers/debugger.ts`：抽取 `pickSimulatedReply()`（T-003），`chat` mutation 接入真实调用 + 双重降级（T-004），`getStatus` 返回真实配置状态（T-005）。
+  - 手动 curl E2E 验证：无 key → 模拟回复 + `connected:false`；格式合法但失效的 key → 真实触发 Gemini `400 API_KEY_INVALID`，被捕获降级，HTTP 200（T-006，场景 (a)(b) 通过，场景 (c) 因无真实 key 延后）。
+  - `pnpm-workspace.yaml`：`@google/genai` build script 评估后设为 `false`（dist 预编译，无需执行），`protobufjs` 设为 `true`（postinstall 仅打印版本提示，无副作用）。
+- **PLAN.md**：feature 2 状态已更新为「已完成（AC-001/AC-004 待真实 key 补测）」。
+- **LESSONS.md**：已追加 `Feature: debugger-llm-integration` 章节。
+
+---

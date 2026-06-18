@@ -17,6 +17,8 @@ export const env = createEnv({
     // Resend (transactional email for password reset, optional: allows app to start without it)
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_FROM_EMAIL: z.string().email().optional(),
+    // Google Gemini (debugger LLM integration, optional: allows app to start without it)
+    GEMINI_API_KEY: z.string().min(1).optional(),
   },
   runtimeEnv: process.env,
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

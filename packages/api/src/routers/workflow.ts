@@ -15,6 +15,9 @@ const nodeConfigSchema = z.object({
   model: z.string().optional(),
   systemInstruction: z.string().max(10000).optional(),
   temperature: z.number().min(0).max(2).optional(),
+  maxRetries: z.number().int().min(0).max(5).optional(),
+  timeout: z.number().int().min(100).max(30000).optional(),
+  knowledgeBaseId: z.string().optional(),
 });
 
 const workflowNodeInputSchema = z.object({

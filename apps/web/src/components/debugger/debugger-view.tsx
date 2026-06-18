@@ -7,17 +7,16 @@ import { StepCards, type PipelineStep } from "./step-cards";
 import { ChatPanel, type ChatMessage } from "./chat-panel";
 import { LogConsole, type SystemLog, createLog, generateConnectionLogs } from "./log-console";
 import { cn } from "@x-workflow/ui/lib/utils";
-import { Button } from "@x-workflow/ui/components/button";
-
-const STEP_DELAY = 500; // ms per step during simulation
 
 interface DebuggerViewProps {
   className?: string;
 }
 
 export function DebuggerView({ className }: DebuggerViewProps) {
+  // Selected workflow
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | undefined>(undefined);
+
   // Pipeline state
-  const [activeStepId, setActiveStepId] = useState<number | undefined>(undefined);
   const [steps, setSteps] = useState<PipelineStep[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
 
@@ -28,12 +27,16 @@ export function DebuggerView({ className }: DebuggerViewProps) {
   // Logs state
   const [logs, setLogs] = useState<SystemLog[]>([]);
 
-  // Fetch pipeline steps from backend
-  const { data: stepsData } = trpc.debugger.getSteps.useQuery(undefined, {
-    staleTime: Infinity,
-  });
+  // Workflows available for selection
+  const { data: workflowsData } = trpc.debugger.listWorkflows.useQuery({ limit: 20 });
 
-  // Initialize steps from backend data
+  // Fetch pipeline step preview from backend (depends on selected workflow)
+  const { data: stepsData } = trpc.debugger.getSteps.useQuery(
+    { workflowId: selectedWorkflowId },
+    { staleTime: 0 },
+  );
+
+  // Initialize/reset steps preview when the selection or its data changes
   useEffect(() => {
     if (stepsData) {
       setSteps(stepsData.map((s) => ({ ...s, status: "pending" })));
@@ -63,79 +66,60 @@ export function DebuggerView({ className }: DebuggerViewProps) {
     });
   }, []);
 
-  // Execute pipeline simulation
-  const executePipeline = useCallback(
-    async (userMessage: string, agentResponse: string) => {
-      setIsExecuting(true);
-      addLog("EXEC", "Pipeline execution started");
-
-      // Add user message to chat
-      const userMsg: ChatMessage = {
-        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        role: "user",
-        content: userMessage,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMsg]);
-
-      // Simulate each step
-      for (let i = 0; i < steps.length; i++) {
-        const step = steps[i];
-        setActiveStepId(step.id);
-        addLog("EXEC", `Executing Step ${step.id}: ${step.name}`);
-
-        // Simulate work
-        await new Promise((resolve) => setTimeout(resolve, STEP_DELAY));
-
-        // Log step completion
-        addLog("INFO", `Step ${step.id} completed successfully`);
-
-        // Update step status
-        setSteps((prev) =>
-          prev.map((s) =>
-            s.id === step.id ? { ...s, status: "completed" } : s
-          )
-        );
-      }
-
-      // Clear active step
-      setActiveStepId(undefined);
-      setIsExecuting(false);
-
-      // Add agent response to chat
-      const agentMsg: ChatMessage = {
-        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        role: "agent",
-        content: agentResponse,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, agentMsg]);
-
-      addLog("INFO", "Pipeline execution completed");
-    },
-    [steps, addLog]
-  );
-
   // Handle message send
   const handleSendMessage = useCallback(
     async (message: string) => {
       if (isProcessing || isExecuting) return;
 
       setIsProcessing(true);
+      setIsExecuting(true);
       addLog("INFO", `User input received: "${message.slice(0, 50)}${message.length > 50 ? "..." : ""}"`);
+
+      const userMsg: ChatMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        role: "user",
+        content: message,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
 
       try {
         const result = await chatMutation.mutateAsync({
           message,
+          workflowId: selectedWorkflowId,
         });
 
-        await executePipeline(message, result.response);
+        // Render the backend's real step results directly (no fake animation)
+        setSteps(
+          result.steps.map((s) => ({
+            id: s.id,
+            name: s.name,
+            status: s.status,
+            durationMs: s.duration,
+            detail: s.detail,
+          })),
+        );
+
+        if (result.haltedAt) {
+          addLog("WARN", `Pipeline halted at node ${result.haltedAt}`);
+        }
+        addLog("INFO", "Pipeline execution completed");
+
+        const agentMsg: ChatMessage = {
+          id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          role: "agent",
+          content: result.response,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, agentMsg]);
       } catch (error) {
         addLog("WARN", `Request failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      } finally {
+        setIsExecuting(false);
         setIsProcessing(false);
       }
     },
-    [isProcessing, isExecuting, addLog, chatMutation, executePipeline]
+    [isProcessing, isExecuting, addLog, chatMutation, selectedWorkflowId]
   );
 
   // Handle clear logs
@@ -167,7 +151,21 @@ export function DebuggerView({ className }: DebuggerViewProps) {
             </span>
           </div>
         </div>
-        <StepCards steps={steps} activeStepId={activeStepId} />
+
+        <select
+          className="mb-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          value={selectedWorkflowId ?? ""}
+          onChange={(e) => setSelectedWorkflowId(e.target.value || undefined)}
+        >
+          <option value="">未选择工作流（单步模拟）</option>
+          {workflowsData?.map((wf) => (
+            <option key={wf.id} value={wf.id}>
+              {wf.name} ({wf.nodeCount} 节点)
+            </option>
+          ))}
+        </select>
+
+        <StepCards steps={steps} isExecuting={isExecuting} />
       </div>
 
       {/* Center: Chat Panel */}

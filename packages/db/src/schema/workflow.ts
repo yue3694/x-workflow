@@ -40,6 +40,9 @@ export interface NodeConfig {
   model?: string;
   systemInstruction?: string;
   temperature?: number;
+  maxRetries?: number;
+  timeout?: number;
+  knowledgeBaseId?: string;
 }
 
 export interface WorkflowNode {

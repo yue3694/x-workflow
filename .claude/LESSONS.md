@@ -70,3 +70,32 @@
 
 ---
 
+### Feature: debugger-llm-integration
+
+#### 技术要点
+
+1. **`@google/genai` 真实调用方式**（已用真实 API 调用验证报错路径，确认可行）
+   - `new GoogleGenAI({ apiKey })` 构造 client；`ai.models.generateContent({ model, contents, config: { systemInstruction, temperature } })` 发起调用；成功时取 `response.text`。
+   - 调用失败（如 key 无效）会抛 `ApiError`，错误信息里只包含 Google 侧的通用描述（如 `"API key not valid"`），不会回显传入的 key 本身——但调用方日志仍应只打 `err` 对象、不打用户消息全文，双重避免敏感信息外泄。
+
+2. **"配置存在" ≠ "配置可用"，两者职责要分开**
+   - `isGeminiConfigured()` 只做格式/占位字符串校验（key 非空、不是 `"MY_GEMINI_API_KEY"` 之类的占位符），**不**发真实请求验证 key 是否真的有效。
+   - 后果：一个格式合法但实际已失效/被吊销的 key，会让 `getStatus` 显示 `connected: true`，直到真正调用 `chat` 时才在 `.catch` 里降级。这是 design.md 阶段就接受的权衡（避免 `getStatus` 每次都触发一次真实外部调用的成本/延迟），不是 bug，但要在 PR 描述或文档里说清楚，避免被当作"误报"来排查。
+
+3. **pnpm `allowBuilds` 不要无差别 `true`，但也不要无差别 `false`**
+   - 新增 `@google/genai` 触发 pnpm 的 `ignoredBuiltDependencies` 提示。检查后发现其 `prepare` 脚本只用于从源码构建（发布的 npm 包已经带预编译好的 `dist/`），设为 `false` 不影响功能。
+   - 同批出现的 `protobufjs`（`@google/genai` 的间接依赖）的 `postinstall` 脚本读了一下就回显一条版本提示到 stderr，无副作用，评估后设为 `true`。
+   - 排查方法：直接读 `node_modules/.pnpm/<pkg>/node_modules/<pkg>/package.json` 的 `scripts` 字段 + 对应脚本源码，而不是凭包名"看起来像不像原生编译"去猜。
+
+#### 安全经验
+
+1. **降级路径要双重兜底：配置前置短路 + 调用异常捕获**
+   - `isGeminiConfigured()` 为 false 时直接走模拟回复（不发请求）；为 true 时仍包一层 `.catch` 捕获真实调用失败（网络错误、key 失效等），两层叠加保证 `chat` mutation 永远不会因为 LLM 侧问题抛 500。
+   - 验证方式：故意写入一个格式合法但失效的假 key，触发真实的 Gemini `400 API_KEY_INVALID` 响应，确认整条链路（捕获 → 打日志 → 降级返回 → HTTP 200）符合预期，而不是只读代码"看起来应该没问题"。
+
+#### 验证范围说明
+
+- 本次因环境中没有真实可用的 `GEMINI_API_KEY`，AC-001（真实回复内容）/AC-004（自定义 systemInstruction/temperature 确实生效）两项延后到 key 到位后补测，已与用户确认（2026-06-18）。已完整验证的是两条降级路径（未配置 / 配置了无效 key）与 `getStatus` 的状态切换。
+
+---
+

@@ -5,6 +5,7 @@ import { Button } from "@x-workflow/ui/components/button";
 import { Input } from "@x-workflow/ui/components/input";
 import { Label } from "@x-workflow/ui/components/label";
 import type { WorkflowNode } from "@x-workflow/db/schema/workflow";
+import { trpc } from "@/utils/trpc";
 
 interface ConfigPanelProps {
   selectedNode: WorkflowNode | null;
@@ -13,6 +14,7 @@ interface ConfigPanelProps {
 
 export function ConfigPanel({ selectedNode, onConfigUpdate }: ConfigPanelProps) {
   const [localConfig, setLocalConfig] = React.useState<Record<string, unknown>>({});
+  const { data: documents } = trpc.knowledge.list.useQuery();
 
   // Sync local config when selected node changes
   React.useEffect(() => {
@@ -124,8 +126,32 @@ export function ConfigPanel({ selectedNode, onConfigUpdate }: ConfigPanelProps) 
           </div>
         );
 
-      case "parallel":
       case "multimodal":
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="knowledgeBaseId">关联知识库</Label>
+              <select
+                id="knowledgeBaseId"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={(localConfig.knowledgeBaseId as string) ?? ""}
+                onChange={(e) => handleChange("knowledgeBaseId", e.target.value || undefined)}
+              >
+                <option value="">不关联知识库</option>
+                {documents?.map((doc) => (
+                  <option key={doc.id} value={doc.id}>
+                    {doc.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                执行时将从该知识库检索相关片段融合进上下文
+              </p>
+            </div>
+          </div>
+        );
+
+      case "parallel":
         return (
           <div className="text-sm text-muted-foreground">
             <p>此节点类型暂无可配置参数</p>
@@ -157,14 +183,38 @@ export function ConfigPanel({ selectedNode, onConfigUpdate }: ConfigPanelProps) 
           {/* Global config section */}
           <div className="border-t pt-4">
             <h3 className="mb-2 text-xs font-medium text-muted-foreground">全局配置</h3>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="maxRetries" className="text-sm">最大重试次数</Label>
-                <span className="text-sm text-muted-foreground">3</span>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="maxRetries" className="text-sm shrink-0">最大重试次数</Label>
+                <Input
+                  id="maxRetries"
+                  type="number"
+                  min={0}
+                  max={5}
+                  className="h-8 w-20 text-right"
+                  value={(localConfig.maxRetries as number) ?? 3}
+                  onChange={(e) =>
+                    handleChange("maxRetries", Math.min(5, Math.max(0, Number(e.target.value) || 0)))
+                  }
+                />
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="timeout" className="text-sm">超时时间</Label>
-                <span className="text-sm text-muted-foreground">30s</span>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="timeout" className="text-sm shrink-0">超时时间 (ms)</Label>
+                <Input
+                  id="timeout"
+                  type="number"
+                  min={100}
+                  max={30000}
+                  step={100}
+                  className="h-8 w-24 text-right"
+                  value={(localConfig.timeout as number) ?? 30000}
+                  onChange={(e) =>
+                    handleChange(
+                      "timeout",
+                      Math.min(30000, Math.max(100, Number(e.target.value) || 100)),
+                    )
+                  }
+                />
               </div>
             </div>
           </div>

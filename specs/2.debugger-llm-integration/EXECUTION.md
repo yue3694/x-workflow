@@ -22,29 +22,29 @@
 
 ## 原子任务列表
 
-- [ ] **T-001**: `packages/env/src/server.ts` 新增 `GEMINI_API_KEY: z.string().min(1).optional()`（沿用 `RESEND_API_KEY` 的可选模式）
+- [x] **T-001**: `packages/env/src/server.ts` 新增 `GEMINI_API_KEY: z.string().min(1).optional()`（沿用 `RESEND_API_KEY` 的可选模式）
   - 文件: `packages/env/src/server.ts`
   - 验收: `pnpm dev:server` 在不设置该变量时仍能正常启动
 
-- [ ] **T-002**: `packages/api` 新增依赖 `@google/genai`（版本对齐原型 `^2.4.0` 或当前可安装的兼容版本），新建 `packages/api/src/utils/gemini.ts`
+- [x] **T-002**: `packages/api` 新增依赖 `@google/genai`（版本对齐原型 `^2.4.0` 或当前可安装的兼容版本），新建 `packages/api/src/utils/gemini.ts`
   - 导出 `isGeminiConfigured(): boolean` — 校验 `env.GEMINI_API_KEY` 存在、非空、非占位字符串（如 `"MY_GEMINI_API_KEY"`，参考原型校验思路）
   - 导出 `generateReply({ message, systemInstruction, temperature, model }): Promise<string>` — 调用 `ai.models.generateContent`，内部不 catch，异常向上抛给调用方决定降级
   - 文件: `packages/api/package.json`、`packages/api/src/utils/gemini.ts`
   - 验收: `tsc` 通过；未设置 key 时 `isGeminiConfigured()` 返回 `false`
 
-- [ ] **T-003**: `packages/api/src/routers/debugger.ts` 抽取 `pickSimulatedReply()` 辅助函数，复用现有 `RESPONSE_TEMPLATES` 随机选句逻辑（不删除模拟模板，作为降级路径保留）
+- [x] **T-003**: `packages/api/src/routers/debugger.ts` 抽取 `pickSimulatedReply()` 辅助函数，复用现有 `RESPONSE_TEMPLATES` 随机选句逻辑（不删除模拟模板，作为降级路径保留）
   - 文件: `packages/api/src/routers/debugger.ts`
   - 验收: 抽取后行为与原逻辑等价（仍是随机选一句）
 
-- [ ] **T-004**: `chat` mutation 改为：`isGeminiConfigured()` 为真时调用 `generateReply()`（用 `.catch` 捕获失败并打 `console.error` 后降级为 `pickSimulatedReply()`），否则直接走 `pickSimulatedReply()`；移除原 `setTimeout` 模拟延迟
+- [x] **T-004**: `chat` mutation 改为：`isGeminiConfigured()` 为真时调用 `generateReply()`（用 `.catch` 捕获失败并打 `console.error` 后降级为 `pickSimulatedReply()`），否则直接走 `pickSimulatedReply()`；移除原 `setTimeout` 模拟延迟
   - 文件: `packages/api/src/routers/debugger.ts`
   - 验收: 三条路径（有效 key / 无 key / 调用失败）都不抛错，均返回 `{ response, llmConfig, steps }`
 
-- [ ] **T-005**: `getStatus` 改为 `connected: isGeminiConfigured()`，移除硬编码 `connected: true`
+- [x] **T-005**: `getStatus` 改为 `connected: isGeminiConfigured()`，移除硬编码 `connected: true`
   - 文件: `packages/api/src/routers/debugger.ts`
   - 验收: 不设置 key 时返回 `connected: false`
 
-- [ ] **T-006**: 手动验证三种场景并记录结果
+- [x] **T-006**: 手动验证三种场景并记录结果
   - (a) 不配置 `GEMINI_API_KEY`：聊天走模拟回复，前端徽章显示未连接 —— 本环境必测
   - (b) 配置占位/无效 key：调用失败被捕获，仍返回降级回复而非报错 —— 本环境必测（用一个格式合法但无效的字符串模拟）
   - (c) 配置真实有效 key：收到 Gemini 真实生成内容 —— **若用户未提供真实可用的 `GEMINI_API_KEY`，本场景延后到 key 到位后补测**，不阻塞本 feature 其余验收

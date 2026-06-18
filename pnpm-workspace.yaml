@@ -2,8 +2,10 @@ packages:
   - apps/*
   - packages/*
 allowBuilds:
+  '@google/genai': false
   esbuild: true
   msw: true
+  protobufjs: true
   sharp: true
 catalog:
   date-fns: ^4.1.0

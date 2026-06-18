@@ -3,6 +3,9 @@
  */
 
 import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
+import { db } from "@x-workflow/db";
+import { document, documentChunk } from "@x-workflow/db/schema/knowledge";
 
 /**
  * Supported file types for text extraction
@@ -238,4 +241,74 @@ export async function processRAG(
     chunks,
     totalChunks: chunks.length,
   };
+}
+
+/**
+ * Cosine similarity between two equal-length vectors
+ */
+function cosineSimilarity(a: number[], b: number[]): number {
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    const ai = a[i] ?? 0;
+    const bi = b[i] ?? 0;
+    dot += ai * bi;
+    normA += ai * ai;
+    normB += bi * bi;
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+/**
+ * Search the most similar chunks for a given query within a single document
+ * (the "knowledge base" granularity in this app is one uploaded document).
+ * Verifies document ownership before returning any content.
+ */
+export async function searchSimilarChunks(
+  knowledgeBaseId: string,
+  userId: string,
+  queryText: string,
+  topK = 3,
+): Promise<string[]> {
+  const doc = await db.query.document.findFirst({
+    where: eq(document.id, knowledgeBaseId),
+  });
+
+  if (!doc) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Knowledge base not found" });
+  }
+
+  if (doc.userId !== userId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+  }
+
+  const chunks = await db.query.documentChunk.findMany({
+    where: eq(documentChunk.documentId, knowledgeBaseId),
+  });
+
+  if (chunks.length === 0) {
+    return [];
+  }
+
+  const queryEmbedding = generateEmbedding(queryText);
+
+  const ranked = chunks
+    .map((chunk) => {
+      let embedding: number[] = [];
+      try {
+        embedding = JSON.parse(chunk.embedding);
+      } catch {
+        embedding = [];
+      }
+      return {
+        content: chunk.content,
+        score: embedding.length > 0 ? cosineSimilarity(queryEmbedding, embedding) : -1,
+      };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+
+  return ranked.map((r) => r.content);
 }

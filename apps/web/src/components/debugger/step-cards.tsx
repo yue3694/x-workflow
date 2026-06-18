@@ -3,20 +3,22 @@
 import { cn } from "@x-workflow/ui/lib/utils";
 
 export interface PipelineStep {
-  id: number;
+  id: string;
+  type?: string;
   name: string;
-  description: string;
-  icon: string;
-  status?: "pending" | "active" | "completed" | "error";
+  description?: string;
+  status?: "pending" | "completed" | "error" | "skipped";
+  durationMs?: number;
+  detail?: string;
 }
 
 interface StepCardsProps {
   steps: PipelineStep[];
-  activeStepId?: number;
+  isExecuting?: boolean;
 }
 
 const STEP_ICONS: Record<string, React.ReactNode> = {
-  webhook: (
+  trigger: (
     <svg
       className="size-5"
       fill="none"
@@ -31,7 +33,7 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
       />
     </svg>
   ),
-  shield: (
+  condition: (
     <svg
       className="size-5"
       fill="none"
@@ -46,7 +48,7 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
       />
     </svg>
   ),
-  database: (
+  parallel: (
     <svg
       className="size-5"
       fill="none"
@@ -61,7 +63,22 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
       />
     </svg>
   ),
-  brain: (
+  multimodal: (
+    <svg
+      className="size-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"
+      />
+    </svg>
+  ),
+  llm_synthesis: (
     <svg
       className="size-5"
       fill="none"
@@ -78,36 +95,27 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
-export function StepCards({ steps, activeStepId }: StepCardsProps) {
+export function StepCards({ steps, isExecuting }: StepCardsProps) {
   return (
     <div className="flex flex-col gap-3">
       {steps.map((step) => {
-        const isActive = step.id === activeStepId;
-        const isCompleted = step.status === "completed" || (activeStepId !== undefined && step.id < activeStepId);
+        const isCompleted = step.status === "completed";
+        const isError = step.status === "error";
 
         return (
           <div
             key={step.id}
             className={cn(
               "relative overflow-hidden rounded-lg border p-4 transition-all duration-300",
-              // Base styles
               "bg-card text-card-foreground",
-              // Active state - pulsing highlight
-              isActive && "border-primary shadow-lg shadow-primary/20 animate-pulse",
-              // Completed state
+              isExecuting && !step.status && "border-primary shadow-lg shadow-primary/20 animate-pulse",
               isCompleted && "border-green-500/50 bg-green-500/10",
-              // Pending state
-              !isActive && !isCompleted && "border-border opacity-60"
+              isError && "border-red-500/50 bg-red-500/10",
+              !isCompleted && !isError && !isExecuting && "border-border opacity-60"
             )}
           >
             {/* Status indicator */}
             <div className="absolute right-3 top-3">
-              {isActive && (
-                <div className="flex items-center gap-1.5 text-xs text-primary">
-                  <span className="size-2 animate-ping rounded-full bg-primary" />
-                  Running
-                </div>
-              )}
               {isCompleted && (
                 <svg
                   className="size-5 text-green-500"
@@ -123,6 +131,21 @@ export function StepCards({ steps, activeStepId }: StepCardsProps) {
                   />
                 </svg>
               )}
+              {isError && (
+                <svg
+                  className="size-5 text-red-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              )}
             </div>
 
             {/* Step content */}
@@ -130,39 +153,23 @@ export function StepCards({ steps, activeStepId }: StepCardsProps) {
               <div
                 className={cn(
                   "flex size-10 shrink-0 items-center justify-center rounded-lg",
-                  isActive && "bg-primary/20 text-primary",
                   isCompleted && "bg-green-500/20 text-green-500",
-                  !isActive && !isCompleted && "bg-muted text-muted-foreground"
+                  isError && "bg-red-500/20 text-red-500",
+                  !isCompleted && !isError && "bg-muted text-muted-foreground"
                 )}
               >
-                {STEP_ICONS[step.icon] || STEP_ICONS.webhook}
+                {STEP_ICONS[step.type ?? "trigger"] || STEP_ICONS.trigger}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    Step {step.id}
-                  </span>
-                  <h3
-                    className={cn(
-                      "font-semibold",
-                      isActive && "text-primary"
-                    )}
-                  >
-                    {step.name}
-                  </h3>
-                </div>
+                <h3 className="font-semibold">{step.name}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {step.description}
+                  {step.detail ?? step.description}
                 </p>
+                {step.durationMs !== undefined && (
+                  <p className="mt-1 text-xs text-muted-foreground">{step.durationMs}ms</p>
+                )}
               </div>
             </div>
-
-            {/* Progress bar for active step */}
-            {isActive && (
-              <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted">
-                <div className="h-full animate-progress rounded-full bg-primary" />
-              </div>
-            )}
           </div>
         );
       })}
