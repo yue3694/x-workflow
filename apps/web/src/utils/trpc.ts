@@ -1,40 +1,31 @@
-import { QueryCache, QueryClient } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import { createTRPCReact } from "@trpc/react-query";
 import type { AppRouter } from "@x-workflow/api/routers/index";
 import { env } from "@x-workflow/env/web";
 import { toast } from "sonner";
 
 export const queryClient = new QueryClient({
-  queryCache: new QueryCache({
-    onError: (error, query) => {
-      toast.error(error.message, {
-        action: {
-          label: "retry",
-          onClick: () => {
-            query.invalidate();
-          },
-        },
-      });
+  defaultOptions: {
+    queries: {
+      retry: 1,
     },
-  }),
+    mutations: {
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    },
+  },
 });
 
 const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: `${env.NEXT_PUBLIC_SERVER_URL}/trpc`,
-      fetch(url, options) {
-        return fetch(url, {
-          ...options,
-          credentials: "include",
-        });
-      },
+      credentials: "include",
     }),
   ],
 });
 
-export const trpc = createTRPCOptionsProxy<AppRouter>({
-  client: trpcClient,
-  queryClient,
-});
+export const { trpc } = createTRPCReact<AppRouter>();
+export { trpcClient };

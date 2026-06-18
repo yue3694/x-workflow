@@ -24,6 +24,9 @@ catalogs:
     dotenv:
       specifier: ^17.2.2
       version: 17.4.2
+    drizzle-orm:
+      specifier: ^0.45.1
+      version: 0.45.2
     hono:
       specifier: ^4.8.2
       version: 4.12.25
@@ -139,6 +142,9 @@ importers:
       '@trpc/client':
         specifier: 'catalog:'
         version: 11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3)
+      '@trpc/react-query':
+        specifier: ^11.17.0
+        version: 11.17.0(@tanstack/react-query@5.101.0(react@19.2.7))(@trpc/client@11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3))(@trpc/server@11.17.0(typescript@6.0.3))(react@19.2.7)(typescript@6.0.3)
       '@trpc/server':
         specifier: 'catalog:'
         version: 11.17.0(typescript@6.0.3)
@@ -230,6 +236,9 @@ importers:
       dotenv:
         specifier: 'catalog:'
         version: 17.4.2
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@libsql/client@0.15.15)(kysely@0.28.17)
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -1909,6 +1918,15 @@ packages:
     hasBin: true
     peerDependencies:
       '@trpc/server': 11.17.0
+      typescript: '>=5.7.2'
+
+  '@trpc/react-query@11.17.0':
+    resolution: {integrity: sha512-AGcl5YAF8NnhBmyJ6PqJqKb1M5VTGSoNRNqJ3orct4o4epdcg0GWhW+qT9q6gPzs/2ImIwYCdfFpgNGdZ9yLHA==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.80.3
+      '@trpc/client': 11.17.0
+      '@trpc/server': 11.17.0
+      react: '>=18.2.0'
       typescript: '>=5.7.2'
 
   '@trpc/server@11.17.0':
@@ -4915,6 +4933,14 @@ snapshots:
   '@trpc/client@11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3)':
     dependencies:
       '@trpc/server': 11.17.0(typescript@6.0.3)
+      typescript: 6.0.3
+
+  '@trpc/react-query@11.17.0(@tanstack/react-query@5.101.0(react@19.2.7))(@trpc/client@11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3))(@trpc/server@11.17.0(typescript@6.0.3))(react@19.2.7)(typescript@6.0.3)':
+    dependencies:
+      '@tanstack/react-query': 5.101.0(react@19.2.7)
+      '@trpc/client': 11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3)
+      '@trpc/server': 11.17.0(typescript@6.0.3)
+      react: 19.2.7
       typescript: 6.0.3
 
   '@trpc/server@11.17.0(typescript@6.0.3)':

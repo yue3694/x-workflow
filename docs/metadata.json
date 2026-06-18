@@ -1,0 +1,6 @@
+{
+  "name": "Alexandria AI Orchestrator",
+  "description": "An elegant, scholarly AI orchestration workspace with flowchart canvases, system debugger, security topology, and administration panels.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

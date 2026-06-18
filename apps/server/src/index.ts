@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { trpcServer } from "@hono/trpc-server";
 import { createContext } from "@x-workflow/api/context";
 import { appRouter } from "@x-workflow/api/routers/index";

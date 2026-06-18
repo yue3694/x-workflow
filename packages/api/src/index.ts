@@ -23,3 +23,20 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
     },
   });
 });
+
+/**
+ * Admin procedure - requires authentication and admin role
+ */
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  const userRole = (ctx.session.user as { role?: string }).role;
+  if (userRole !== "admin") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Admin access required",
+      cause: "Insufficient permissions",
+    });
+  }
+  return next({
+    ctx,
+  });
+});

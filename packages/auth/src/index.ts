@@ -7,6 +7,26 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 export function createAuth() {
   const db = createDb();
 
+  // Build social providers only if credentials are configured
+  const socialProviders: {
+    google?: { clientId: string; clientSecret: string };
+    github?: { clientId: string; clientSecret: string };
+  } = {};
+
+  if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
+    socialProviders.google = {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    };
+  }
+
+  if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
+    socialProviders.github = {
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+    };
+  }
+
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -26,7 +46,7 @@ export function createAuth() {
         httpOnly: true,
       },
     },
-    plugins: [],
+    ...(Object.keys(socialProviders).length > 0 && { socialProviders }),
   });
 }
 

@@ -1,0 +1,313 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+export enum ActiveTab {
+  LOGIN = "login",
+  DASHBOARD = "dashboard",
+  ORCHESTRATOR = "orchestrator",
+  KNOWLEDGE = "knowledge_base",
+  DEBUGGER = "debugger",
+  ADMINISTRATION = "administration"
+}
+
+export type ThemeMode = "light" | "dark" | "auto";
+export type Language = "en" | "zh";
+
+export interface Node {
+  id: string;
+  type: "trigger" | "condition" | "parallel" | "multimodal" | "llm_synthesis";
+  name: string;
+  description: string;
+  x: number;
+  y: number;
+  config: {
+    url?: string;
+    model?: string;
+    systemInstruction?: string;
+    temperature?: number;
+    topP?: number;
+    outputSchema?: string;
+    maxRetries?: number;
+    timeout?: number;
+    haltOnError?: boolean;
+    activeText?: string;
+  };
+}
+
+export interface Member {
+  id: string;
+  name: string;
+  email: string;
+  initials: string;
+  avatar?: string;
+  role: "ADMIN" | "EDITOR" | "VIEWER";
+  permissionLevel: "L1_FULL_ACCESS" | "L3_DEPT_MANAGED" | "L5_READ_ONLY";
+  lastSeen: string;
+}
+
+export interface SystemLog {
+  timestamp: string;
+  level: "INFO" | "TRACE" | "LOG" | "WARN" | "EXEC" | "DEBUG";
+  message: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  sender: "user" | "agent";
+  text: string;
+  timestamp: string;
+  stepId?: number;
+}
+
+export interface KnowledgeDoc {
+  id: string;
+  name: string;
+  size: string;
+  type: string;
+  uploadedAt: string;
+}
+
+export const LANGUAGES = {
+  en: {
+    brand: "Alexandria",
+    subtitle: "AI Orchestrator",
+    slogan: "Precision in Every Connection.",
+    quote: "\"The library is a sphere whose exact center is any hexagon and whose circumference is unattainable.\"",
+    protocol: "v2.4.0 Archive Protocol",
+    welcome: "Welcome Back",
+    signinSub: "Sign in to your AI orchestration workspace.",
+    continueMail: "or continue with email",
+    emailLabel: "Workspace Email",
+    accessKeyLabel: "Access Key",
+    forgot: "Forgot?",
+    initSession: "Initialize Session",
+    noAccess: "No access key yet?",
+    requestAccess: "Request Workspace Access",
+    support: "Support",
+    docs: "Documentation",
+    changelog: "Changelog",
+    legal: "Legal",
+    
+    // Tabs
+    tabDashboard: "Dashboard",
+    tabOrchestrator: "Orchestrator",
+    tabKnowledge: "Knowledge Base",
+    tabDebugger: "Debugger",
+    tabAdministration: "Administration",
+    deployAgent: "Deploy Agent",
+    newWorkflow: "New Workflow",
+    
+    // Dashboard / Admin view
+    exportLogs: "Export Logs",
+    addMember: "Add Member",
+    sysAdmin: "System Administration",
+    adminDesc: "MANAGE GLOBAL USER ACCESS, DEFINE HIERARCHICAL ROLES, AND MONITOR CORE INFRASTRUCTURE HEALTH FROM A UNIFIED CONTROL PLANE.",
+    
+    sysHealth: "System Health",
+    totalWorkflows: "Total Workflows",
+    activeNodes: "Active Nodes",
+    operationalStatus: "STATUS: OPERATIONAL_CLUSTERS_12",
+    vsPrevMonth: "VS PREV MONTH",
+    docRegionsCount: "Distributed globally (6 Regions)",
+    userDirectory: "User Directory",
+    userDirectorySub: "Manage active users and their assigned access roles.",
+    totalUsers: "TOTAL USERS",
+    allUsers: "All Users",
+    activeLabel: "Active",
+    
+    // Member Table Headers
+    thUser: "User / Identifier",
+    thRole: "Access Role",
+    thPermission: "Clearance Level",
+    thLastActive: "Last Seen",
+    thActions: "Ops",
+    
+    // Permission Topology
+    permTopology: "Permission Topology",
+    strictHierarchy: "Strict Hierarchy",
+    strictHierarchyDesc: "Inheritance enabled for all child nodes",
+    encryptionVault: "Encryption Vault",
+    encryptionVaultDesc: "Keys rotated every 72 hours",
+    externalAccess: "External Access",
+    externalAccessDesc: "Anonymous API calls detected",
+    upgradeProTitle: "Orchestrator Pro Upgrade",
+    upgradeProDesc: "ACCESS DEEP-PACKET INSPECTION, CUSTOM ROLE DEFINITIONS, AND ADVANCED AUDIT LOGGING PROTOCOLS.",
+    upgradeLicenseBtn: "Upgrade License",
+    getLicenseBtn: "Get Extended License",
+    
+    // Node Library
+    nodeLibraryTitle: "Atomic Nodes",
+    nodeLibrarySub: "Node Library",
+    triggerNode: "Trigger",
+    triggerSub: "Webhook, API, Schedule",
+    conditionNode: "Condition",
+    conditionSub: "Branching Logic",
+    parallelNode: "Parallel API",
+    parallelSub: "Looping Executor",
+    multimodalNode: "Multi-Modal",
+    multimodalSub: "Context Fusion",
+    llmSynthesisTitle: "LLM-04 Synthesis",
+    llmSynthesisDesc: "Cognitive Reasoning",
+    
+    // Node config
+    nodeConfigTitle: "Node Config",
+    neuralCore: "Neural Core",
+    outputSchema: "Output Schema",
+    editJson: "Edit JSON",
+    runtimePolicy: "Runtime Policy",
+    maxRetries: "Max Retries",
+    timeout: "Timeout (ms)",
+    faultTolerance: "Fault Tolerance",
+    haltWorkflow: "Halt workflow on invalid output",
+    cancel: "Cancel",
+    applySync: "Apply Sync",
+    saveChanges: "Save Changes",
+    systemInstructionLabel: "System Instruction",
+    parametersLabel: "Parameters",
+    connectedIndex: "Connected Index",
+    connectedIndexDocs: "Historical Archives (12.4k Docs)",
+    
+    // Debugger view
+    executionGraph: "Execution Graph",
+    liveWorkflowPath: "Live Workflow Path",
+    agentInteraction: "Agent Interaction",
+    realtimeTesting: "Real-Time Testing",
+    liveSession: "LIVE SESSION",
+    executionLogs: "Execution Logs",
+    clearLogs: "Clear Logs",
+    exportCsv: "Export CSV",
+    latency: "Latency: ",
+    tokens: "Tokens: ",
+    model: "Model: ",
+    typeTestMessage: "Type a test message...",
+    
+    // Status text
+    autoThemeActive: "Auto-Theme Enabled",
+    dayMode: "Daytime Layout",
+    nightMode: "Nighttime Canvas",
+    notConnectedGemini: "Gemini client running in local simulation mode. Secure credentials available in AI Studio.",
+    connectedGemini: "Gemini server connected. Direct cognitive response activated."
+  },
+  zh: {
+    brand: "Alexandria",
+    subtitle: "AI 编排器",
+    slogan: "连接无界，精准入微。",
+    quote: "“图书馆是一个球体，其精确中心是任何六角形，而其圆周是无法触及的。”",
+    protocol: "v2.4.0 归档协议",
+    welcome: "欢迎回来",
+    signinSub: "登录到您的 AI 编排工作空间。",
+    continueMail: "或使用邮箱继续",
+    emailLabel: "工作空间邮箱",
+    accessKeyLabel: "访问密码",
+    forgot: "忘记密码？",
+    initSession: "初始化会话",
+    noAccess: "还没有访问密钥？",
+    requestAccess: "申请工作空间访问权限",
+    support: "技术支持",
+    docs: "文档指南",
+    changelog: "更新日志",
+    legal: "法律声明",
+    
+    // Tabs
+    tabDashboard: "控制面板",
+    tabOrchestrator: "AI 编排器",
+    tabKnowledge: "知识库",
+    tabDebugger: "联调试验",
+    tabAdministration: "系统管理",
+    deployAgent: "部署智能体",
+    newWorkflow: "新建工作流",
+    
+    // Dashboard / Admin view
+    exportLogs: "导出日志",
+    addMember: "添加成员",
+    sysAdmin: "系统管理中心",
+    adminDesc: "在统一控制平面下管理全局用户生命周期、精确界定层级化角色，并监控核心人工智能基础设施健康状况。",
+    
+    sysHealth: "系统健康度",
+    totalWorkflows: "总执编流水线",
+    activeNodes: "活动运行节点",
+    operationalStatus: "运行状态：完全合规运营 (12个运行集群)",
+    vsPrevMonth: "较上月增长",
+    docRegionsCount: "全球分布（共6个可用区）",
+    userDirectory: "用户目录",
+    userDirectorySub: "管理活跃的工作空间用户及其分配的角色和安全等级。",
+    totalUsers: "总用户数",
+    allUsers: "所有用户",
+    activeLabel: "活跃",
+    
+    // 成员列表表头
+    thUser: "成员标识 / 邮箱",
+    thRole: "访问角色",
+    thPermission: "安全许可级别",
+    thLastActive: "最后活跃时间",
+    thActions: "运维操作",
+    
+    // 权限拓扑
+    permTopology: "层级权限拓扑",
+    strictHierarchy: "严格层级集成",
+    strictHierarchyDesc: "所有子节点继承全局父级安全域",
+    encryptionVault: "高强度密钥库",
+    encryptionVaultDesc: "密钥自动每72小时轮转换代一次",
+    externalAccess: "外部调用监管",
+    externalAccessDesc: "监控到匿名API接口查询和签名尝试",
+    upgradeProTitle: "系统企业级升舱",
+    upgradeProDesc: "激活高级数据深度包检测 (DPI)、可定制化多粒度权限流，以及系统合规性审计跟踪协议。",
+    upgradeLicenseBtn: "升级系统许可",
+    getLicenseBtn: "获取企业版专属证书",
+    
+    // 节点库
+    nodeLibraryTitle: "原子可编节点",
+    nodeLibrarySub: "原子算子库",
+    triggerNode: "触发源",
+    triggerSub: "网络钩子 / 外部接口 / 定时任务",
+    conditionNode: "分流条件",
+    conditionSub: "多分枝多规则引擎",
+    parallelNode: "并发算子",
+    parallelSub: "高性能循环并执期",
+    multimodalNode: "多模态合成",
+    multimodalSub: "上下文注意力融合机制",
+    llmSynthesisTitle: "LLM-04 合成引擎",
+    llmSynthesisDesc: "高感知认知计算推理",
+    
+    // 节点配置
+    nodeConfigTitle: "参数配置器",
+    neuralCore: "神经网络底座",
+    outputSchema: "结构化输出约束 JSON Schema",
+    editJson: "编辑 JSON 文件",
+    runtimePolicy: "运行时规则",
+    maxRetries: "最大重试次数",
+    timeout: "单次执行限时 (毫秒)",
+    faultTolerance: "容错策略",
+    haltWorkflow: "若输出不合规，则立即中断流水线主进程",
+    cancel: "取消操作",
+    applySync: "同步参数应用",
+    saveChanges: "保存更改",
+    systemInstructionLabel: "系统指令 / 提示语控制",
+    parametersLabel: "精细参数控制",
+    connectedIndex: "已关联的知识集标",
+    connectedIndexDocs: "历史典籍知识库 (内含12.4K篇文献文档)",
+    
+    // 调试页
+    executionGraph: "运行流路图",
+    liveWorkflowPath: "实时作业流水线路径追踪",
+    agentInteraction: "智能体沙盒交互区",
+    realtimeTesting: "无缝现场测试",
+    liveSession: "当前实时对话会话中",
+    executionLogs: "流水线进程控制日志",
+    clearLogs: "清除控制台",
+    exportCsv: "导出为 CSV 归档",
+    latency: "系统延时：",
+    tokens: "计算吞吐率：",
+    model: "运行模型：",
+    typeTestMessage: "输入沙盒聊天测试词...",
+    
+    // 状态更新
+    autoThemeActive: "自动主题同步已激活",
+    dayMode: "白天阅读排版已加载",
+    nightMode: "夜间抗疲劳画布已加载",
+    notConnectedGemini: "Gemini 客户端运行于本地沙盒仿真模式下，您可通过 Settings > Secrets 面板添加官方密钥以激活超智体验。",
+    connectedGemini: "Gemini 人工智能引擎直连服务成功启动。直达高吞吐智能反馈。"
+  }
+};
