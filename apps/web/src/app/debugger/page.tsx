@@ -1,4 +1,4 @@
-import { DebuggerView } from "@web/components/debugger";
+import { DebuggerView } from "@/components/debugger";
 
 export default function DebuggerPage() {
   return <DebuggerView />;

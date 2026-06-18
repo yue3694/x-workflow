@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-import { trpc } from "@web/utils/trpc";
+import { trpc } from "@/utils/trpc";
 import { StepCards, type PipelineStep } from "./step-cards";
 import { ChatPanel, type ChatMessage } from "./chat-panel";
 import { LogConsole, type SystemLog, createLog, generateConnectionLogs } from "./log-console";
-import { cn } from "@x-workflow/ui/utils";
+import { cn } from "@x-workflow/ui/lib/utils";
 import { Button } from "@x-workflow/ui/components/button";
 
 const STEP_DELAY = 500; // ms per step during simulation

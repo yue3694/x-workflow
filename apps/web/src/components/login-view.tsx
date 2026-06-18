@@ -9,6 +9,7 @@ import { Button } from "@x-workflow/ui/components/button";
 import { Input } from "@x-workflow/ui/components/input";
 import { Label } from "@x-workflow/ui/components/label";
 import { env } from "@x-workflow/env/web";
+import { trpc } from "@/utils/trpc";
 
 const authClient = createAuthClient({
   baseURL: env.NEXT_PUBLIC_SERVER_URL,
@@ -48,6 +49,9 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [success, setSuccess] = useState<string | null>(null);
 
   const strings = LANGUAGES[language];
+
+  const signUpMutation = trpc.auth.signUp.useMutation();
+  const forgotPasswordMutation = trpc.auth.forgotPassword.useMutation();
 
   // Auto-slide transition effect - 5 seconds
   useEffect(() => {
@@ -140,8 +144,12 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
 
     setIsLoading(true);
     try {
-      // TODO: Implement server-side registration via API
-      setSuccess("Registration is handled via the dashboard. Please contact admin.");
+      await signUpMutation.mutateAsync({
+        email: signupEmail,
+        password: signupPassword,
+        name: signupName,
+      });
+      setSuccess("Account created. Please sign in.");
       setModal("login");
       setEmail(signupEmail);
       setPassword("");
@@ -162,8 +170,8 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     setError(null);
     setIsLoading(true);
     try {
-      // TODO: Implement server-side password reset via API
-      setSuccess("Password reset instructions sent to your email.");
+      const result = await forgotPasswordMutation.mutateAsync({ email: forgotEmail });
+      setSuccess(result.message);
       setForgotEmail("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send reset email");

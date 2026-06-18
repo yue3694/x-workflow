@@ -6,7 +6,7 @@
 
 | 序号 | feature                      | 说明                                                                   | 依赖 | 状态   |
 | ---- | ----------------------------- | ---------------------------------------------------------------------- | ---- | ------ |
-| 1    | auth-completion                | 打通注册表单与真实后端、用 Resend 实现真实忘记密码/重置密码邮件流程     | -    | 待开发 |
+| 1    | auth-completion                | 打通注册表单与真实后端、用 Resend 实现真实忘记密码/重置密码邮件流程     | -    | 已完成 |
 | 2    | debugger-llm-integration       | Debugger 聊天用真实 Google Gemini 调用替换写死的模拟回复                | -    | 待开发 |
 | 3    | debugger-graph-execution       | Debugger 真正按已保存的工作流节点图（trigger→condition→parallel→multimodal→llm_synthesis）执行，而非 4 个写死的可视化步骤 | 2    | 待开发 |
 

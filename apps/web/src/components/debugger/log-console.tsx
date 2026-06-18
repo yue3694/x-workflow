@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 
-import { cn } from "@x-workflow/ui/utils";
+import { cn } from "@x-workflow/ui/lib/utils";
 import { Button } from "@x-workflow/ui/components/button";
 
 export type LogLevel = "INFO" | "TRACE" | "LOG" | "WARN" | "EXEC" | "DEBUG";

@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@x-workflow/ui/utils";
+import { cn } from "@x-workflow/ui/lib/utils";
 
 export interface PipelineStep {
   id: number;

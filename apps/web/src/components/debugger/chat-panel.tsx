@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 
-import { cn } from "@x-workflow/ui/utils";
+import { cn } from "@x-workflow/ui/lib/utils";
 import { Button } from "@x-workflow/ui/components/button";
 import { Textarea } from "@x-workflow/ui/components/textarea";
 

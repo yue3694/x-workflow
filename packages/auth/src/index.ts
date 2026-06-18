@@ -3,6 +3,7 @@ import * as schema from "@x-workflow/db/schema/auth";
 import { env } from "@x-workflow/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { sendResetPasswordEmail } from "./email";
 
 export function createAuth() {
   const db = createDb();
@@ -36,6 +37,9 @@ export function createAuth() {
     trustedOrigins: [env.CORS_ORIGIN],
     emailAndPassword: {
       enabled: true,
+      sendResetPassword: async ({ user, url }) => {
+        await sendResetPasswordEmail({ to: user.email, resetUrl: url });
+      },
     },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,

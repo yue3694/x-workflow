@@ -16,6 +16,7 @@
     "bcryptjs": "^3.0.3",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
+    "resend": "^6.12.4",
     "zod": "catalog:"
   },
   "devDependencies": {
