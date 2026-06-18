@@ -1,0 +1,11 @@
+# AWS Region
+aws_region = "us-east-1"
+
+# Domain name (must be managed in Route 53)
+domain_name = "your-domain.com"
+
+# Database URL (Turso or PostgreSQL connection string)
+database_url = "libsql://your-database.turso.io?authToken=your-token"
+
+# Better Auth secret (minimum 32 characters)
+better_auth_secret = "your-super-secret-key-min-32-chars!!"

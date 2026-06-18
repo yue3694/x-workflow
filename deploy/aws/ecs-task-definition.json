@@ -1,0 +1,88 @@
+{
+  "family": "x-workflow",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "web",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/x-workflow-web:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3001,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "NEXT_PUBLIC_SERVER_URL",
+          "value": "http://server:3000"
+        }
+      ],
+      "secrets": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/x-workflow",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "web"
+        }
+      }
+    },
+    {
+      "name": "server",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/x-workflow-server:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "${DATABASE_URL_SECRET_ARN}"
+        },
+        {
+          "name": "BETTER_AUTH_SECRET",
+          "valueFrom": "${BETTER_AUTH_SECRET_SECRET_ARN}"
+        },
+        {
+          "name": "BETTER_AUTH_URL",
+          "valueFrom": "${BETTER_AUTH_URL_SECRET_ARN}"
+        },
+        {
+          "name": "CORS_ORIGIN",
+          "valueFrom": "${CORS_ORIGIN_SECRET_ARN}"
+        }
+      ],
+      "dependsOn": [
+        {
+          "containerName": "server",
+          "condition": "START"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/x-workflow",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "server"
+        }
+      }
+    }
+  ]
+}
