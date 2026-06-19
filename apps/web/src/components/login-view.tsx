@@ -23,13 +23,11 @@ import {
   User,
   Activity,
   ChevronRight,
-  Clock,
 } from "lucide-react";
 import { Button } from "@x-workflow/ui/components/button";
 import { Input } from "@x-workflow/ui/components/input";
 import { Label } from "@x-workflow/ui/components/label";
 import { env } from "@x-workflow/env/web";
-import { trpc } from "@/utils/trpc";
 
 const authClient = createAuthClient({
   baseURL: env.NEXT_PUBLIC_SERVER_URL,
