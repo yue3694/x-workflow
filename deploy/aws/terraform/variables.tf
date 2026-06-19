@@ -4,20 +4,20 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "domain_name" {
-  description = "Domain name for the application"
+variable "db_username" {
+  description = "Database master username"
   type        = string
-  default     = "example.com"
+  default     = "admin"
 }
 
-variable "database_url" {
-  description = "Database connection URL (e.g., Turso or PostgreSQL)"
+variable "db_password" {
+  description = "Database master password"
   type        = string
   sensitive   = true
 }
 
 variable "better_auth_secret" {
-  description = "Better Auth secret key (min 32 characters)"
+  description = "Better Auth secret key (minimum 32 characters)"
   type        = string
   sensitive   = true
 }

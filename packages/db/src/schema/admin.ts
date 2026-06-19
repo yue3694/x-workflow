@@ -1,22 +1,19 @@
-import { relations, sql } from "drizzle-orm";
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { relations } from "drizzle-orm";
+import { pgTable, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 
 /**
  * System Settings Table
  * Stores key-value pairs for system configuration
  */
-export const systemSettings = sqliteTable(
+export const systemSettings = pgTable(
   "system_settings",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     key: text("key").notNull().unique(),
     value: text("value").notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-      .$onUpdate(() => /* @__PURE__ */ new Date())
-      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
   },
-  (table) => [index("system_settings_key_idx").on(table.key)],
+  (table) => [index("system_settings_key_idx").on(table.key)]
 );
 
 /**

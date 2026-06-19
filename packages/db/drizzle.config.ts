@@ -8,8 +8,8 @@ dotenv.config({
 export default defineConfig({
   schema: "./src/schema",
   out: "./src/migrations",
-  dialect: "sqlite",
+  dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "file:./data.db",
+    url: process.env.DATABASE_URL || "postgresql://admin:password@localhost:5432/postgres",
   },
 });

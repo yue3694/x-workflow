@@ -2,7 +2,7 @@
 set -e
 
 # AWS Configuration
-AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_REGION="${AWS_REGION:-us-east-1c}"
 ECR_REPOSITORY="x-workflow"
 ECS_CLUSTER="${ECS_CLUSTER:-x-workflow-cluster}"
 ECS_SERVICE_WEB="${ECS_SERVICE_WEB:-x-workflow-web}"

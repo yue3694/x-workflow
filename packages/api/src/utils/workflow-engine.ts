@@ -49,18 +49,18 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
   }
 }
 
-function executeTrigger(node: WorkflowNode, context: ExecutionContext): string {
+function executeTrigger(node: WorkflowNode, _context: ExecutionContext): string {
   const url = node.config.url;
   return url
     ? `Trigger received (configured webhook: ${url})`
     : "Trigger received (no webhook configured)";
 }
 
-function executeCondition(node: WorkflowNode, context: ExecutionContext): {
+function executeCondition(_node: WorkflowNode, ctx: ExecutionContext): {
   passed: boolean;
   detail: string;
 } {
-  const text = context.text.trim();
+  const text = ctx.text.trim();
 
   if (text.length < 2) {
     return { passed: false, detail: "Condition failed: input text too short" };

@@ -1,15 +1,15 @@
-import { createClient } from "@libsql/client";
 import { env } from "@x-workflow/env/server";
-import { drizzle } from "drizzle-orm/libsql";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
 import * as schema from "./schema";
 
-export function createDb() {
-  const client = createClient({
-    url: env.DATABASE_URL,
-  });
+const connectionString = env.DATABASE_URL;
 
+const client = postgres(connectionString, { max: 10 });
+
+export const db = drizzle({ client, schema });
+
+export function createDb() {
   return drizzle({ client, schema });
 }
-
-export const db = createDb();
