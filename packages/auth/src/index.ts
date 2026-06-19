@@ -28,6 +28,8 @@ export function createAuth() {
     };
   }
 
+  const isHttps = env.BETTER_AUTH_URL.startsWith("https://");
+
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -45,8 +47,10 @@ export function createAuth() {
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
       defaultCookieAttributes: {
-        sameSite: "none",
-        secure: true,
+        // "Secure" cookies are silently dropped by browsers over plain HTTP,
+        // which breaks session persistence on HTTP-only deployments (e.g. bare IP, no TLS yet).
+        sameSite: isHttps ? "none" : "lax",
+        secure: isHttps,
         httpOnly: true,
       },
     },
