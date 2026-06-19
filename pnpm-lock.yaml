@@ -93,6 +93,9 @@ importers:
       '@hono/trpc-server':
         specifier: ^0.4.0
         version: 0.4.2(@trpc/server@11.17.0(typescript@6.0.3))(hono@4.12.25)
+      '@libsql/client':
+        specifier: 0.15.15
+        version: 0.15.15
       '@trpc/server':
         specifier: 'catalog:'
         version: 11.17.0(typescript@6.0.3)

@@ -12,6 +12,7 @@
   "dependencies": {
     "@hono/node-server": "^1.14.4",
     "@hono/trpc-server": "^0.4.0",
+    "@libsql/client": "0.15.15",
     "@trpc/server": "catalog:",
     "@x-workflow/api": "workspace:*",
     "@x-workflow/auth": "workspace:*",
