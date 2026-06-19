@@ -1,9 +1,0 @@
-# AWS Region
-aws_region = "us-east-1"
-
-# Database credentials
-db_username     = "admin"
-db_password     = "your-secure-password"
-
-# Better Auth secret (minimum 32 characters)
-better_auth_secret = "your-super-secret-key-min-32-chars!!"
